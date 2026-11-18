@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ site.name }} — {{ site.tagline }}{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <p class="eyebrow">{{ site.role }}</p>
+  <h1 class="hero-statement">
+    I build the systems that turn <em>operational data</em> into decisions —
+    pipelines, models, applications, and the infrastructure under them.
+  </h1>
+  <p class="hero-sub">{{ site.intro }}</p>
+  <div class="hero-actions">
+    <a class="button" href="#board" data-i18n="hero.see">See the work</a>
+    <a class="button ghost" href="{{ site.resume }}" data-i18n="hero.resume">Download résumé</a>
+  </div>
+</section>
+
+<section class="board-section" id="board">
+  <div class="work-intro">
+    <p class="eyebrow" data-i18n="home.selected">Selected work</p>
+    <h2 class="work-title" data-i18n="home.built">Things I've built</h2>
+    <p class="work-lede">Each one is a full case study — the problem, the data, what I built,
+    and what it produced. Several run as live demos in the browser.</p>
+  </div>
+
+  <div class="board-head">
+    <p class="board-count">{{ projects | length }} <span data-i18n="board.projects">projects</span></p>
+    <div class="filters" role="group" aria-label="Filter work by track">
+      <button class="chip is-active" data-track="all" aria-pressed="true">All</button>
+      {% for track in site.tracks %}
+      <button class="chip" data-track="{{ track.id }}" data-blurb="{{ track.blurb }}" aria-pressed="false">{{ track.label }}</button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <ol class="board" role="list">
+    <li class="board-row board-header" aria-hidden="true">
+      <span>Ref</span><span>Project</span><span>Track</span><span>Stack</span><span>Year</span>
+    </li>
+    {% for p in projects %}
+    <li class="board-row" data-track="{{ p.track }}">
+      <span class="cell-ref">{{ '%02d' % loop.index }}</span>
+      <span class="cell-main">
+        <a class="row-link" href="{{ p.url }}">{{ p.title }}</a>
+        <span class="cell-summary">{{ p.summary }}</span>
+      </span>
+      <span class="cell-track">{{ p.track_label }}</span>
+      <span class="cell-stack">{{ p.stack[:3] | commas }}</span>
+      <span class="cell-year">{{ p.year }}{% if p.status == 'archived' %} <em>arch</em>{% elif p.status == 'active' %} <em>live</em>{% endif %}</span>
+    </li>
+    {% endfor %}
+  </ol>
+  <p class="board-empty" hidden>Nothing filed under that track yet.</p>
+</section>
+
+<section class="capabilities">
+  <h2 class="section-title" data-i18n="home.whatiwork">What I work with</h2>
+  <div class="cap-grid">
+    {% for group in site.capabilities %}
+    <div class="cap">
+      <p class="eyebrow">{{ group.group }}</p>
+      <p class="cap-items">{{ group['items'] | commas }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="cap-certs">
+    <span class="eyebrow">Certified</span>
+    {{ site.certifications | commas }}
+  </p>
+</section>
+
+{% if lab %}
+<section class="lab-preview">
+  <div class="board-head">
+    <h2 class="section-title" data-i18n="home.fromlab">From the lab</h2>
+    <a class="more" href="/lab/" data-i18n="home.allwriteups">All writeups →</a>
+  </div>
+  <div class="card-grid">
+    {% for entry in lab[:3] %}
+    <a class="card" href="{{ entry.url }}">
+      <p class="eyebrow">{{ entry.date }}{% if entry.technique %} · {{ entry.technique }}{% endif %}</p>
+      <h3>{{ entry.title }}</h3>
+      <p class="card-summary">{{ entry.summary }}</p>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}

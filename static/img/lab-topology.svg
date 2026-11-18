@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" role="img"
+     aria-label="Detection lab topology: an isolated VirtualBox network with DC01 domain controller, WS01 workstation, and a Kali attack host, showing the telemetry flow from enumeration to event log review.">
+  <style>
+    .bx   { fill: var(--paper-lift, #FFFDF8); stroke: var(--rule, #DCD9CF); stroke-width: 1.5; }
+    .bx-a { fill: var(--paper-lift, #FFFDF8); stroke: var(--signal, #A9660F); stroke-width: 1.5; }
+    .ttl  { font: 600 13px 'Archivo', sans-serif; fill: var(--ink, #15191D); }
+    .sub  { font: 400 10.5px 'JetBrains Mono', monospace; fill: var(--ink-muted, #5C6169); }
+    .seg  { font: 500 10px 'JetBrains Mono', monospace; fill: var(--ink-faint, #8A8F96);
+            letter-spacing: .08em; text-transform: uppercase; }
+    .flow { stroke: var(--accent, #0E6B5E); stroke-width: 1.75; fill: none; }
+    .atk  { stroke: var(--signal, #A9660F); stroke-width: 1.75; fill: none; stroke-dasharray: 5 3; }
+    .lbl  { font: 400 10px 'JetBrains Mono', monospace; fill: var(--accent, #0E6B5E); }
+    .lbla { font: 400 10px 'JetBrains Mono', monospace; fill: var(--signal, #A9660F); }
+    .host { fill: none; stroke: var(--rule-soft, #E9E6DC); stroke-width: 1; stroke-dasharray: 4 4; }
+  </style>
+
+  <rect x="8" y="8" width="704" height="384" rx="4" class="host"/>
+  <text x="20" y="28" class="seg">VirtualBox host · NAT network · no route to production</text>
+
+  <!-- Domain segment -->
+  <rect x="30" y="52" width="360" height="212" rx="3" class="host"/>
+  <text x="44" y="74" class="seg">Domain segment</text>
+
+  <rect x="56" y="92" width="150" height="70" rx="3" class="bx"/>
+  <text x="70" y="118" class="ttl">DC01</text>
+  <text x="70" y="136" class="sub">Server 2019</text>
+  <text x="70" y="151" class="sub">AD DS · DNS · 5 users</text>
+
+  <rect x="230" y="92" width="140" height="70" rx="3" class="bx"/>
+  <text x="244" y="118" class="ttl">WS01</text>
+  <text x="244" y="136" class="sub">Windows 10</text>
+  <text x="244" y="151" class="sub">Sysmon via GPO</text>
+
+  <line x1="206" y1="127" x2="230" y2="127" class="flow"/>
+
+  <rect x="56" y="188" width="314" height="56" rx="3" class="bx"/>
+  <text x="70" y="211" class="ttl">Event logs · Security + Sysmon</text>
+  <text x="70" y="230" class="sub">4769 service ticket requests · process and network events</text>
+
+  <line x1="131" y1="162" x2="131" y2="188" class="flow"/>
+  <line x1="300" y1="162" x2="300" y2="188" class="flow"/>
+  <text x="140" y="180" class="lbl">telemetry</text>
+
+  <!-- Attacker segment -->
+  <rect x="424" y="52" width="264" height="212" rx="3" class="host"/>
+  <text x="438" y="74" class="seg">Isolated segment</text>
+
+  <rect x="450" y="92" width="212" height="70" rx="3" class="bx-a"/>
+  <text x="464" y="118" class="ttl">Kali Linux</text>
+  <text x="464" y="136" class="sub">ldapsearch · Wireshark</text>
+  <text x="464" y="151" class="sub">attack + capture host</text>
+
+  <path d="M450 118 C 415 118, 405 118, 372 118" class="atk"/>
+  <text x="392" y="110" class="lbla" text-anchor="middle">1</text>
+  <text x="556" y="182" class="lbla" text-anchor="middle">SPN enumeration →</text>
+  <text x="556" y="197" class="lbla" text-anchor="middle">packet capture</text>
+
+  <!-- Flow strip -->
+  <line x1="30" y1="296" x2="690" y2="296" stroke="var(--rule, #DCD9CF)" stroke-width="1"/>
+  <text x="30" y="322" class="seg">Workflow</text>
+
+  <text x="30"  y="352" class="ttl">Enumerate</text>
+  <text x="30"  y="370" class="sub">SPN query</text>
+  <text x="176" y="352" class="ttl">Observe</text>
+  <text x="176" y="370" class="sub">4769 events</text>
+  <text x="322" y="352" class="ttl">Analyze</text>
+  <text x="322" y="370" class="sub">Wireshark</text>
+  <text x="468" y="352" class="ttl">Detect</text>
+  <text x="468" y="370" class="sub">volume + deviation</text>
+  <text x="614" y="352" class="ttl">Harden</text>
+  <text x="614" y="370" class="sub">CIS baseline</text>
+
+  <path d="M120 347 L 166 347" class="flow"/>
+  <path d="M262 347 L 312 347" class="flow"/>
+  <path d="M404 347 L 458 347" class="flow"/>
+  <path d="M534 347 L 604 347" class="flow"/>
+</svg>

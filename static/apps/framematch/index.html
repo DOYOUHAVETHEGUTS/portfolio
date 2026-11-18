@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FrameMatch — how it works (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F1F1EE;--paper-lift:#FBFBF9;--ink:#15191D;--ink-muted:#5C6169;
+  --ink-faint:#8A8F96;--rule:#D7D6CF;--rule-soft:#E4E3DD;
+  --accent:#0E6B5E;--accent-dim:#0E6B5E1A;--signal:#A9660F;--panel:#171C21;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"Newsreader",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--display);font-size:15px;line-height:1.5}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin:0}
+
+.head{border-bottom:1px solid var(--ink);padding:1rem 1.5rem .85rem}
+.head h1{font-size:1.05rem;font-weight:600;letter-spacing:-.01em;margin:.2rem 0 0}
+.demo-flag{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--signal);border:1px solid currentColor;padding:.2rem .45rem;margin-left:.5rem}
+
+.wrap{padding:1.5rem;max-width:940px}
+.intro{font-family:var(--body);font-size:1.05rem;color:var(--ink-muted);max-width:64ch;margin:0 0 1.5rem}
+
+.pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--rule-soft);border:1px solid var(--rule-soft);margin:1.5rem 0}
+.stage{background:var(--paper);padding:.8rem .7rem;text-align:center}
+.stage .n{font-family:var(--mono);font-size:.55rem;color:var(--ink-faint)}
+.stage .t{font-size:.8rem;font-weight:600;margin-top:.2rem;letter-spacing:-.01em}
+.stage .d{font-family:var(--mono);font-size:.56rem;color:var(--ink-muted);margin-top:.25rem}
+@media(max-width:720px){.pipeline{grid-template-columns:1fr 1fr}}
+
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;padding:1.25rem;border:1px solid var(--rule);background:var(--paper-lift);margin:1.25rem 0}
+@media(max-width:640px){.controls{grid-template-columns:1fr}}
+.ctl label{display:block;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:.5rem}
+.ctl .val{color:var(--accent);font-weight:700}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.ctl .hint{font-family:var(--body);font-size:.9rem;color:var(--ink-muted);margin-top:.4rem}
+
+.grid-head{display:flex;justify-content:space-between;align-items:baseline;margin:1.5rem 0 .5rem;flex-wrap:wrap;gap:.5rem}
+.frames{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:6px}
+.cell{aspect-ratio:16/10;border:1px solid var(--rule);position:relative;font-family:var(--mono);font-size:.5rem;color:var(--ink-faint);display:flex;align-items:flex-end;padding:2px 3px;overflow:hidden}
+.cell .bg{position:absolute;inset:0;opacity:.85}
+.cell.sampled{outline:2px solid var(--ink);outline-offset:-2px}
+.cell.match::after{content:"✓";position:absolute;top:2px;right:3px;color:#fff;font-size:.7rem;font-weight:700;font-family:var(--display)}
+.cell.match{border-color:var(--accent)}
+.cell.miss{opacity:.4}
+.cell .lab{position:relative;z-index:1;background:rgba(0,0,0,.35);color:#fff;padding:0 2px;border-radius:2px}
+
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--rule-soft);border:1px solid var(--rule-soft);margin:1.5rem 0}
+.stat{background:var(--paper);padding:.85rem}
+.stat .v{font-size:1.4rem;font-weight:600;letter-spacing:-.02em;color:var(--accent)}
+.stat .l{font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-top:.2rem}
+.verdict{font-family:var(--mono);font-size:.72rem;padding:.7rem .9rem;border-left:2px solid var(--accent);background:var(--accent-dim);margin:1rem 0}
+.verdict.low{border-left-color:var(--signal);background:#A9660F14}
+
+.note{font-family:var(--mono);font-size:.66rem;color:var(--ink-faint);border-left:2px solid var(--signal);padding:.5rem .75rem;background:var(--paper-lift);margin:1.5rem 0;line-height:1.5}
+.foot{border-top:1px solid var(--rule);padding:1rem 1.5rem;font-family:var(--mono);font-size:.62rem;color:var(--ink-faint);display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+@media(prefers-reduced-motion:reduce){*{transition-duration:.001ms!important}}
+</style>
+</head>
+<body>
+
+<header class="head">
+  <p class="eyebrow">FrameMatch <span class="demo-flag">Concept demo</span></p>
+  <h1>Near-duplicate video detection — how the pipeline behaves</h1>
+</header>
+
+<div class="wrap">
+  <p class="intro">
+    The real tool fingerprints video frames and compares them to find re-encoded,
+    trimmed, or resized copies. It can't run OpenCV in a browser, so this is a
+    faithful <em>model</em> of the two decisions that drive it: how often to sample
+    frames, and how strict a match has to be. A synthetic "edited clip" is compared
+    against its "source" below — move the sliders and watch precision and cost trade
+    against each other.
+  </p>
+
+  <div class="pipeline">
+    <div class="stage"><div class="n">01</div><div class="t">Sample</div><div class="d">N frames / sec</div></div>
+    <div class="stage"><div class="n">02</div><div class="t">Fingerprint</div><div class="d">pHash + ORB</div></div>
+    <div class="stage"><div class="n">03</div><div class="t">Match</div><div class="d">Hamming dist.</div></div>
+    <div class="stage"><div class="n">04</div><div class="t">Score</div><div class="d">frame hits ÷ total</div></div>
+    <div class="stage"><div class="n">05</div><div class="t">Decide</div><div class="d">confidence</div></div>
+  </div>
+
+  <div class="controls">
+    <div class="ctl">
+      <label>Sampling rate — <span class="val" id="rate-val">2</span> frame(s)/sec</label>
+      <input type="range" id="rate" min="1" max="10" value="2">
+      <p class="hint">Lower sampling is far cheaper but can skip the frames that would have matched. The real tool defaults to one per second.</p>
+    </div>
+    <div class="ctl">
+      <label>Match threshold — Hamming ≤ <span class="val" id="thresh-val">10</span></label>
+      <input type="range" id="thresh" min="2" max="20" value="10">
+      <p class="hint">How different two fingerprints can be and still count as the same frame. Too loose and unrelated frames match; too tight and a re-encode breaks the match.</p>
+    </div>
+  </div>
+
+  <div class="grid-head">
+    <p class="eyebrow">Edited clip — <span id="sampled-count">0</span> of <span id="total-count">0</span> frames sampled</p>
+    <p class="eyebrow" style="color:var(--accent)">✓ = matched to source</p>
+  </div>
+  <div class="frames" id="frames"></div>
+
+  <div class="readout">
+    <div class="stat"><div class="v" id="r-sampled">0</div><div class="l">Frames compared</div></div>
+    <div class="stat"><div class="v" id="r-matched">0</div><div class="l">Frames matched</div></div>
+    <div class="stat"><div class="v" id="r-conf">0%</div><div class="l">Confidence</div></div>
+    <div class="stat"><div class="v" id="r-cost">0</div><div class="l">Relative cost</div></div>
+  </div>
+
+  <div class="verdict" id="verdict"></div>
+
+  <div class="note">
+    Model, not the engine: fingerprints here are stand-ins so the demo runs
+    instantly and offline. The real pipeline computes perceptual hashes and ORB
+    descriptors with OpenCV and matches them across CPU cores. The trade-off you're
+    moving — recall versus cost, strictness versus robustness — is the real one.
+  </div>
+</div>
+
+<footer class="foot">
+  <span>FrameMatch · concept demo · runs entirely in your browser</span>
+  <span>Source: ORB + parallel-CPU version linked from the case study</span>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(id){return document.getElementById(id);};
+
+  // Build a synthetic 40-frame "source", then an "edited clip": same content,
+  // re-encoded (adds fingerprint noise), with a few frames cut and a few unrelated
+  // frames spliced in. Each frame carries a hue (content) + a noise offset.
+  var N=40, rng=seed(7);
+  var source=[], clip=[];
+  for(var i=0;i<N;i++){
+    var hue=Math.floor(rng()*360);
+    source.push({hue:hue, kind:"src"});
+  }
+  // Edited clip: drop ~15%, splice ~15% unrelated, re-encode the rest (hue drift + noise)
+  for(var j=0;j<N;j++){
+    var r=rng();
+    if(r<0.15){ continue; } // cut frame
+    if(r>0.85){ clip.push({hue:Math.floor(rng()*360), kind:"splice", srcIdx:-1}); continue; }
+    var drift=Math.round((rng()-0.5)*8);         // re-encode hue drift
+    var noise=Math.round(rng()*14);              // fingerprint distance from re-encoding
+    clip.push({hue:(source[j].hue+drift+360)%360, kind:"reenc", srcIdx:j, noise:noise});
+  }
+
+  function seed(s){return function(){s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};}
+
+  function render(){
+    var rate=+$("rate").value, thresh=+$("thresh").value;
+    $("rate-val").textContent=rate;
+    $("thresh-val").textContent=thresh;
+
+    // Sampling: keep every ceil(10/rate)-th frame (rate 10 -> every frame; rate 1 -> ~every 10th)
+    var step=Math.max(1, Math.round(10/rate));
+    var frames=$("frames"); frames.innerHTML="";
+    var sampled=0, matched=0;
+
+    clip.forEach(function(f,idx){
+      var isSampled=(idx%step===0);
+      // A sampled real frame matches if its re-encode noise is within threshold.
+      var isMatch=isSampled && f.kind==="reenc" && f.noise<=thresh;
+      if(isSampled) sampled++;
+      if(isMatch) matched++;
+
+      var cell=document.createElement("div");
+      cell.className="cell"+(isSampled?" sampled":" miss")+(isMatch?" match":"");
+      var bg=document.createElement("div");
+      bg.className="bg";
+      bg.style.background="hsl("+f.hue+",45%,"+(isMatch?55:62)+"%)";
+      cell.appendChild(bg);
+      var lab=document.createElement("span");
+      lab.className="lab"; lab.textContent=idx;
+      cell.appendChild(lab);
+      frames.appendChild(cell);
+    });
+
+    var realFrames=clip.filter(function(f){return f.kind==="reenc";}).length;
+    var conf=sampled? matched/sampled : 0;
+    // Relative cost scales with frames actually fingerprinted.
+    var cost=sampled;
+
+    $("sampled-count").textContent=sampled;
+    $("total-count").textContent=clip.length;
+    $("r-sampled").textContent=sampled;
+    $("r-matched").textContent=matched;
+    $("r-conf").textContent=Math.round(conf*100)+"%";
+    $("r-cost").textContent=cost;
+
+    var v=$("verdict");
+    if(conf>=0.5){
+      v.className="verdict";
+      v.textContent="Verdict: likely the same source ("+Math.round(conf*100)+"% of sampled frames matched). This is what a true positive looks like.";
+    } else if(matched>0){
+      v.className="verdict low";
+      v.textContent="Verdict: inconclusive. Some frames matched, but not enough — try sampling more often, or loosening the threshold if the copy is heavily re-encoded.";
+    } else {
+      v.className="verdict low";
+      v.textContent="Verdict: no match found. Either the threshold is too tight for this re-encode, or sampling skipped the frames that would have matched.";
+    }
+  }
+
+  $("rate").addEventListener("input",render);
+  $("thresh").addEventListener("input",render);
+  render();
+})();
+</script>
+</body>
+</html>

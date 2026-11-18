@@ -1,0 +1,103 @@
+# ---------------------------------------------------------------------------
+# Global site configuration. Edit this file first.
+# Everything here is available in templates as {{ site.<key> }}.
+# ---------------------------------------------------------------------------
+
+name: KeAndre Williams
+role: Logistics & Finance Analytics · Data Scientist · Systems Builder
+tagline: Data, analytics, AI, and security systems.
+
+# The 30-second pitch. Keep it to two sentences.
+intro: >
+  I analyze freight revenue and forecast performance for a global cargo network,
+  and I build the systems that do it — data pipelines, models, applications, and
+  the infrastructure underneath them.
+
+# Base URL. Leave blank for local dev; set to https://yourdomain.com before you
+# deploy so canonical links, sitemap.xml, and social cards resolve correctly.
+base_url: ""
+
+email: plain.alcoves.0e@icloud.com
+location: Dallas–Fort Worth, Texas
+
+links:
+  GitHub: https://github.com/DOYOUHAVETHEGUTS
+  LinkedIn: https://linkedin.com/in/xp7mq2vl9azk4rtb
+
+# Path to your resume inside static/. Drop the PDF in static/files/.
+resume: /files/resume.pdf
+
+# Tracks double as the homepage filter and the "recruiter persona" switcher.
+# The `id` must match the `track:` field in each project's front matter.
+tracks:
+  - id: data-ai
+    label: Data & AI
+    blurb: Modeling, computer vision, and applied machine learning.
+  - id: analytics
+    label: Analytics & Automation
+    blurb: Pipelines, forecasting, reporting, and business impact.
+  - id: security
+    label: Security & Systems
+    blurb: Lab-based defensive research, detection, and hardening.
+  - id: software
+    label: Software
+    blurb: Full-stack applications and interfaces.
+
+# Grouped for the capabilities strip. Keep each group short — this is not a
+# skills inventory, it's a signal of range.
+capabilities:
+  - group: Languages & query
+    items: [Python, SQL, TypeScript, VBA, Bash]
+  - group: Data & ML
+    items: [pandas, scikit-learn, OpenCV, FAISS, Jupyter, Alteryx, Tableau]
+  - group: Systems & delivery
+    items: [FastAPI, React, Tailwind, Node.js, Docker, Git]
+  - group: Security
+    items: [Linux, Active Directory, Wireshark, Metasploit, Splunk-style log analysis]
+
+certifications:
+  - CompTIA CySA+
+  - CompTIA Security+
+  - CompTIA Network+
+  - Alteryx Designer Advanced
+  - Alteryx Designer Core
+
+education:
+  - school: Georgia Institute of Technology
+    detail: B.S. Economics, minor in Spanish
+
+# Professional applied-work projects — drawn from the Data Science Project Portfolio
+# document. These are enterprise-scale work done at American Airlines; no demo links
+# since the underlying data is internal. Edit fields here, not in templates.
+professional_projects:
+  - title: Predictive Forecasting & Cost-Anomaly Detection
+    category: Data Science & ML
+    context: Enterprise spend of $100M+ was managed with static reports that surfaced problems only after the fact.
+    approach: Trained forecasting and clustering models on 10+ years of financial and operational records to project spend and automatically flag anomalies against expected patterns.
+    tools: [Python, R, Alteryx Intelligence Suite, Jupyter, SQL]
+    outcome: Improved forecast accuracy and shifted cost oversight from reactive to proactive, surfacing savings opportunities earlier in the spending cycle.
+    status: Active (production)
+
+  - title: Customer Segmentation for Enterprise Migration
+    category: Customer Analytics
+    context: A migration of 150+ enterprise cargo customers needed a data-driven view of who to prioritize and where value was concentrated.
+    approach: Built customer-analytics and segmentation models and partnered with commercial-strategy and finance to translate segments into an engagement and migration plan.
+    tools: [Python, SQL, Tableau, Excel]
+    outcome: Supported migration of 150+ enterprise customers; identified $3M+ in strategic cost savings.
+    status: Active (production)
+
+  - title: Econometric & Causal Driver Modeling
+    category: Statistical Modeling
+    context: Leaders needed to know which operational levers actually moved financial outcomes — not just what correlated with them.
+    approach: Applied regression and econometric modeling to estimate driver effects, complemented by Monte Carlo simulation to quantify uncertainty and risk across scenarios.
+    tools: [R, RStudio, STATA, Python]
+    outcome: Gave stakeholders defensible, driver-based reasoning behind forecasts rather than surface-level trend descriptions.
+    status: Active (production)
+
+  - title: Governed, Reproducible Data Pipelines
+    category: Data Engineering
+    context: Analysis was trapped in 100+ hours of annual manual reporting that was slow, error-prone, and difficult to audit.
+    approach: Engineered automated ingestion and classification pipelines that parse varying data structures, placed under GitHub version control with documentation; integrated LLM-assisted development (GitHub Copilot) to accelerate delivery.
+    tools: [Alteryx, Python, SQL, Git/GitHub, VBA]
+    outcome: Eliminated 100+ hours of manual work annually; downstream models are now reproducible, version-controlled, and audit-ready.
+    status: Active (production)

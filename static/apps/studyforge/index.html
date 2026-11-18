@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StudyForge — study view (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F1F1EE;--paper-lift:#FBFBF9;--ink:#15191D;--ink-muted:#5C6169;
+  --ink-faint:#8A8F96;--rule:#D7D6CF;--rule-soft:#E4E3DD;
+  --accent:#0E6B5E;--accent-dim:#0E6B5E1A;--signal:#A9660F;--panel:#232A31;
+  --ok:#0E6B5E;--warn:#A9660F;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"Newsreader",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--display);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:900px;margin:0 auto;padding:clamp(1.25rem,4vw,2.5rem)}
+.eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-faint);margin:0}
+.demo-flag{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--signal);border:1px solid currentColor;padding:.2rem .45rem;margin-left:.5rem}
+h1{font-family:var(--body);font-size:clamp(1.5rem,3.5vw,2rem);font-weight:500;margin:.3rem 0 .4rem}
+.sub{color:var(--ink-muted);font-size:.9rem;margin:0 0 1.25rem}
+.rule{border:0;border-top:1.5px solid var(--accent);margin:0 0 1.25rem}
+
+/* material picker */
+.materials{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.mat{flex:1 1 240px;text-align:left;border:1px solid var(--rule);border-radius:8px;
+  background:var(--paper-lift);padding:.7rem .85rem;cursor:pointer}
+.mat:hover{border-color:var(--ink-faint)}
+.mat.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.mat .exam{font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.mat .sec{font-weight:600;font-size:.9rem;margin:.2rem 0 .1rem;line-height:1.3}
+.mat .meta{font-family:var(--mono);font-size:.66rem;color:var(--ink-faint)}
+.grounded{display:inline-block;font-family:var(--mono);font-size:.6rem;letter-spacing:.05em;
+  padding:.1rem .4rem;border-radius:3px;margin-top:.35rem}
+.grounded.ok{background:#0E6B5E1A;color:var(--ok)}
+.grounded.warn{background:#A9660F1A;color:var(--warn)}
+
+/* tabs */
+.tabs{display:inline-flex;border:1px solid var(--rule);border-radius:999px;overflow:hidden;margin-bottom:1rem}
+.tabs button{font-family:var(--mono);font-size:.74rem;padding:.42rem .95rem;border:0;
+  background:var(--paper-lift);color:var(--ink-muted);cursor:pointer}
+.tabs button.on{background:var(--accent);color:#fff}
+
+/* flashcard */
+.card{background:var(--panel);color:#E9E7E0;border-radius:12px;padding:2rem 1.5rem;
+  min-height:230px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;cursor:pointer;position:relative}
+.card .count{position:absolute;top:.9rem;left:0;right:0;font-family:var(--mono);
+  font-size:.68rem;color:#9AA2AA;text-align:center}
+.card .side{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--signal);position:absolute;top:2.2rem;left:0;right:0;text-align:center}
+.card .text{font-size:1.1rem;line-height:1.5;max-width:52ch}
+.card .text.answer{font-size:1rem;color:#D6E8E2}
+.card .hint{position:absolute;bottom:.9rem;left:0;right:0;font-family:var(--mono);
+  font-size:.64rem;color:#9AA2AA;text-align:center}
+.nav{display:flex;justify-content:center;gap:.6rem;margin-top:1rem}
+.btn{font-family:var(--display);font-size:.85rem;padding:.55rem 1.1rem;border-radius:8px;
+  border:1px solid var(--rule);background:var(--paper-lift);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,.card:focus-visible,.mat:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* quiz */
+.q{margin-bottom:.4rem;font-size:1.05rem}
+.qmeta{font-family:var(--mono);font-size:.68rem;color:var(--ink-faint);margin-bottom:1rem}
+.choices{display:flex;flex-direction:column;gap:.5rem}
+.choice{text-align:left;border:1px solid var(--rule);border-radius:8px;background:var(--paper-lift);
+  padding:.7rem .9rem;cursor:pointer;font-size:.92rem}
+.choice:hover{border-color:var(--ink-faint)}
+.choice.correct{border-color:var(--ok);background:#0E6B5E14}
+.choice.wrong{border-color:#B4442E;background:#B4442E12}
+.choice:disabled{cursor:default}
+.why{margin-top:1rem;padding:.8rem 1rem;border-left:2px solid var(--accent);
+  background:var(--accent-dim);font-size:.9rem;border-radius:0 6px 6px 0;display:none}
+.why.show{display:block}
+.score{font-family:var(--mono);font-size:.8rem;color:var(--ink-muted);margin-bottom:1rem}
+.note{font-family:var(--mono);font-size:.62rem;color:var(--ink-faint);
+  background:var(--accent-dim);padding:.6rem .75rem;border-radius:4px;margin-top:1.5rem;line-height:1.6}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* app-level tabs (Library/Languages/Interview Prep) reuse .tabs/.tabs button */
+.lang-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.3rem}
+.lang-name{font-family:var(--body);font-size:1.3rem;font-weight:500;margin:0}
+.lang-meta{font-family:var(--mono);font-size:.72rem;color:var(--ink-faint);margin:.2rem 0 0}
+.lang-level{font-family:var(--mono);font-size:.7rem;padding:.25rem .6rem;border-radius:999px;
+  background:#0E6B5E1A;color:var(--accent);white-space:nowrap;height:fit-content}
+.lang-disclaimer{font-family:var(--mono);font-size:.66rem;color:var(--ink-faint);margin:.2rem 0 1.2rem}
+.lang-h3{font-size:.85rem;font-weight:600;margin:1.3rem 0 .6rem}
+.skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.6rem}
+.skill{background:var(--paper-lift);border:1px solid var(--rule);border-radius:8px;padding:.6rem .7rem}
+.skill .num{font-family:var(--mono);font-size:1.1rem;font-weight:600;color:var(--accent)}
+.skill .lbl{font-size:.76rem;color:var(--ink-muted);margin-top:.1rem}
+.skill .bar{height:4px;background:var(--rule-soft);border-radius:2px;margin-top:.4rem;overflow:hidden}
+.skill .bar i{display:block;height:100%;background:var(--accent)}
+.lang-list{margin:0;padding-left:1.2rem;font-size:.88rem;line-height:1.6}
+.lang-list li{margin-bottom:.3rem}
+.lang-weeks{margin:0;padding-left:1.3rem;font-size:.86rem;line-height:1.55}
+.lang-weeks li{margin-bottom:.4rem}
+.lang-weeks b{font-family:var(--mono);font-size:.72rem;color:var(--accent)}
+.iv-item{border:1px solid var(--rule-soft);border-radius:8px;padding:.8rem .9rem;margin-bottom:.6rem}
+.iv-item .tag{font-family:var(--mono);font-size:.62rem;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--signal);display:block;margin-bottom:.3rem}
+.iv-item p{margin:.2rem 0;font-size:.9rem}
+.iv-item .approach{color:var(--ink-muted);font-size:.85rem;margin-top:.4rem;padding-top:.4rem;
+  border-top:1px solid var(--rule-soft)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">StudyForge <span class="demo-flag">Interactive demo</span></p>
+  <h1 style="font-family:var(--display);font-size:clamp(1.4rem,3.2vw,1.8rem);font-weight:600;margin:.3rem 0 .4rem">Study material engine</h1>
+  <p class="sub" style="margin-bottom:1rem">Three views, same as the real app. Built from real output — the interview-prep example below is genericized.</p>
+
+  <div class="tabs" id="app-tabs" role="group" aria-label="StudyForge section" style="margin-bottom:1.5rem">
+    <button id="apptab-library" class="on" type="button">Library</button>
+    <button id="apptab-languages" type="button">Languages</button>
+    <button id="apptab-interview" type="button">Interview Prep</button>
+  </div>
+
+  <!-- ============ LIBRARY ============ -->
+  <div id="app-library">
+  <h1 id="mat-title" style="font-family:var(--body);font-weight:500">Study view</h1>
+
+  <p class="sub" id="mat-sub">Pick a processed section, then flip through the flashcards or take the quiz — the same study output the pipeline generates and emails, rebuilt to run here.</p>
+  <hr class="rule">
+
+  <div class="materials" id="materials" role="group" aria-label="Processed sections"></div>
+
+  <div class="tabs" role="group" aria-label="Study mode">
+    <button id="tab-cards" class="on" type="button">Flashcards</button>
+    <button id="tab-quiz" type="button">Quiz</button>
+  </div>
+
+  <!-- Flashcards -->
+  <div id="cards-view">
+    <div class="card" id="card" tabindex="0" role="button" aria-label="Flashcard, click to flip">
+      <span class="count" id="card-count"></span>
+      <span class="side" id="card-side">Question</span>
+      <p class="text" id="card-text"></p>
+      <span class="hint">Click the card to flip</span>
+    </div>
+    <div class="nav">
+      <button class="btn" id="prev" type="button">← Prev</button>
+      <button class="btn primary" id="next" type="button">Next →</button>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div id="quiz-view" style="display:none">
+    <p class="score" id="quiz-score"></p>
+    <p class="q" id="quiz-q"></p>
+    <p class="qmeta" id="quiz-meta"></p>
+    <div class="choices" id="quiz-choices"></div>
+    <div class="why" id="quiz-why"></div>
+    <div class="nav">
+      <button class="btn" id="quiz-prev" type="button">← Prev</button>
+      <button class="btn primary" id="quiz-next" type="button">Next →</button>
+    </div>
+  </div>
+
+  <p class="note">Library demo rebuilt from two chapters actually processed through StudyForge
+  (Network+ OSI models, Security+ security controls). Flashcards and quiz items are the
+  study output; the summary PDF, grounding pass, and email delivery run in the full app.
+  No model is called here and nothing is sent anywhere.</p>
+  </div><!-- /app-library -->
+
+  <!-- ============ LANGUAGES ============ -->
+  <div id="app-languages" style="display:none">
+    <div class="lang-head">
+      <div>
+        <h2 class="lang-name" id="lang-name"></h2>
+        <p class="lang-meta" id="lang-meta"></p>
+      </div>
+      <span class="lang-level" id="lang-level"></span>
+    </div>
+    <p class="lang-disclaimer" id="lang-disclaimer"></p>
+
+    <h3 class="lang-h3">Skill estimates</h3>
+    <div class="skills" id="lang-skills"></div>
+
+    <h3 class="lang-h3">Immediate priorities</h3>
+    <ul class="lang-list" id="lang-priorities"></ul>
+
+    <h3 class="lang-h3">Weekly plan</h3>
+    <ol class="lang-weeks" id="lang-weeks"></ol>
+
+    <p class="note">Reflects a real Spanish learning path run through StudyForge — a
+    professional/workplace goal, an honest self-estimate, and a slice of the generated
+    weekly plan and review queue. The skill estimate is explicitly labeled as a
+    StudyForge estimate, not an official CEFR result.</p>
+  </div>
+
+  <!-- ============ INTERVIEW PREP ============ -->
+  <div id="app-interview" style="display:none">
+    <div class="lang-head">
+      <div>
+        <h2 class="lang-name" id="iv-role"></h2>
+        <p class="lang-meta" id="iv-company"></p>
+      </div>
+      <span class="lang-level" id="iv-status"></span>
+    </div>
+
+    <div class="tabs" style="margin:1rem 0">
+      <button id="iv-tab-rehearse" class="on" type="button">Rehearse</button>
+      <button id="iv-tab-all" type="button">All questions</button>
+    </div>
+
+    <div id="iv-rehearse-view">
+      <div class="card" id="iv-card" tabindex="0" role="button" aria-label="Interview question, click to reveal a suggested approach">
+        <span class="count" id="iv-count"></span>
+        <span class="side" id="iv-type"></span>
+        <p class="text" id="iv-q"></p>
+        <span class="hint" id="iv-hint">Click to reveal a suggested approach</span>
+      </div>
+      <div class="nav">
+        <button class="btn" id="iv-prev" type="button">← Prev</button>
+        <button class="btn primary" id="iv-next" type="button">Next →</button>
+      </div>
+    </div>
+
+    <div id="iv-all-view" style="display:none">
+      <div id="iv-all-list"></div>
+    </div>
+
+    <p class="note">Genericized example — fictional role and company, same structure
+    and question types (behavioral, case reasoning, rapid technical) as the real
+    feature, which targets an actual job posting and generates questions and a
+    suggested approach from it. No posting or resume data is sent anywhere in this demo.</p>
+  </div>
+
+  <p class="sr" role="status" aria-live="polite" id="live"></p>
+</div>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  var D = window.STUDYFORGE_DATA;
+  var state = { mat: 0, mode: "cards", card: 0, flipped: false, quiz: 0, picked: {} };
+
+  function mat() { return D.materials[state.mat]; }
+
+  function renderMaterials() {
+    document.getElementById("materials").innerHTML = D.materials.map(function (m, i) {
+      var g = m.grounded
+        ? '<span class="grounded ok">✓ grounded</span>'
+        : '<span class="grounded warn">⚠ ungrounded claims flagged</span>';
+      return '<button type="button" class="mat' + (i === state.mat ? " on" : "") + '" data-mat="' + i + '">' +
+        '<span class="exam">' + m.exam + '</span>' +
+        '<div class="sec">' + m.section + '</div>' +
+        '<span class="meta">' + m.pages + ' · ' + m.flashcards.length + ' cards · ' + m.quiz.length + ' quiz</span><br>' +
+        g + '</button>';
+    }).join("");
+  }
+
+  function renderTitle() {
+    document.getElementById("mat-title").textContent = mat().section;
+  }
+
+  /* ---- flashcards ---- */
+  function renderCard() {
+    var c = mat().flashcards[state.card];
+    document.getElementById("card-count").textContent = "Card " + (state.card + 1) + " / " + mat().flashcards.length;
+    document.getElementById("card-side").textContent = state.flipped ? "Answer" : "Question";
+    var t = document.getElementById("card-text");
+    t.textContent = state.flipped ? c.a : c.q;
+    t.className = "text" + (state.flipped ? " answer" : "");
+    document.getElementById("prev").disabled = state.card === 0;
+    document.getElementById("next").disabled = state.card === mat().flashcards.length - 1;
+  }
+
+  document.getElementById("card").addEventListener("click", function () {
+    state.flipped = !state.flipped; renderCard();
+  });
+  document.getElementById("card").addEventListener("keydown", function (e) {
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); state.flipped = !state.flipped; renderCard(); }
+  });
+  document.getElementById("prev").onclick = function () {
+    if (state.card > 0) { state.card--; state.flipped = false; renderCard(); }
+  };
+  document.getElementById("next").onclick = function () {
+    if (state.card < mat().flashcards.length - 1) { state.card++; state.flipped = false; renderCard(); }
+  };
+
+  /* ---- quiz ---- */
+  function quizScore() {
+    var q = mat().quiz, correct = 0, answered = 0;
+    q.forEach(function (item, i) {
+      if (state.picked[i] != null) { answered++; if (state.picked[i] === item.answer) correct++; }
+    });
+    return { correct: correct, answered: answered, total: q.length };
+  }
+
+  function renderQuiz() {
+    var q = mat().quiz[state.quiz];
+    var s = quizScore();
+    document.getElementById("quiz-score").textContent =
+      "Score: " + s.correct + " / " + s.total + "  ·  answered " + s.answered + " of " + s.total;
+    document.getElementById("quiz-q").textContent = "Q" + (state.quiz + 1) + ". " + q.q;
+    document.getElementById("quiz-meta").textContent = "Question " + (state.quiz + 1) + " of " + mat().quiz.length;
+    var picked = state.picked[state.quiz];
+    var answered = picked != null;
+    document.getElementById("quiz-choices").innerHTML = q.choices.map(function (c, i) {
+      var cls = "choice";
+      if (answered) {
+        if (i === q.answer) cls += " correct";
+        else if (i === picked) cls += " wrong";
+      }
+      return '<button type="button" class="' + cls + '" data-choice="' + i + '"' +
+        (answered ? " disabled" : "") + '>' + c + '</button>';
+    }).join("");
+    var why = document.getElementById("quiz-why");
+    if (answered) { why.textContent = q.why; why.classList.add("show"); }
+    else { why.classList.remove("show"); }
+    document.getElementById("quiz-prev").disabled = state.quiz === 0;
+    document.getElementById("quiz-next").disabled = state.quiz === mat().quiz.length - 1;
+  }
+
+  document.getElementById("quiz-choices").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-choice]");
+    if (!b || state.picked[state.quiz] != null) return;
+    state.picked[state.quiz] = +b.dataset.choice;
+    renderQuiz();
+    var q = mat().quiz[state.quiz];
+    document.getElementById("live").textContent =
+      (+b.dataset.choice === q.answer ? "Correct. " : "Incorrect. ") + q.why;
+  });
+  document.getElementById("quiz-prev").onclick = function () {
+    if (state.quiz > 0) { state.quiz--; renderQuiz(); }
+  };
+  document.getElementById("quiz-next").onclick = function () {
+    if (state.quiz < mat().quiz.length - 1) { state.quiz++; renderQuiz(); }
+  };
+
+  /* ---- mode + material switching ---- */
+  function setMode(m) {
+    state.mode = m;
+    document.getElementById("tab-cards").classList.toggle("on", m === "cards");
+    document.getElementById("tab-quiz").classList.toggle("on", m === "quiz");
+    document.getElementById("cards-view").style.display = m === "cards" ? "" : "none";
+    document.getElementById("quiz-view").style.display = m === "quiz" ? "" : "none";
+    if (m === "cards") renderCard(); else renderQuiz();
+  }
+  document.getElementById("tab-cards").onclick = function () { setMode("cards"); };
+  document.getElementById("tab-quiz").onclick = function () { setMode("quiz"); };
+
+  document.getElementById("materials").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-mat]");
+    if (!b) return;
+    state.mat = +b.dataset.mat;
+    state.card = 0; state.flipped = false; state.quiz = 0; state.picked = {};
+    renderMaterials(); renderTitle();
+    setMode(state.mode);
+  });
+
+  /* ---- Languages ---- */
+  function renderLanguages() {
+    var L = window.STUDYFORGE_LANGUAGES;
+    document.getElementById("lang-name").textContent = L.language;
+    document.getElementById("lang-meta").textContent = L.goal + " · " + L.cadence + " · target " + L.target;
+    document.getElementById("lang-level").textContent = L.level;
+    document.getElementById("lang-disclaimer").textContent = L.disclaimer;
+    document.getElementById("lang-skills").innerHTML = L.skills.map(function (s) {
+      return '<div class="skill"><div class="num">' + s.score + '</div>' +
+        '<div class="lbl">' + s.label + '</div>' +
+        '<div class="bar"><i style="width:' + s.score + '%"></i></div></div>';
+    }).join("");
+    document.getElementById("lang-priorities").innerHTML = L.priorities.map(function (p) {
+      return "<li>" + p + "</li>";
+    }).join("");
+    document.getElementById("lang-weeks").innerHTML = L.weeklyPlan.map(function (w) {
+      return "<li><b>Week " + w.week + ".</b> " + w.focus + "</li>";
+    }).join("");
+  }
+
+  /* ---- Interview Prep ---- */
+  var ivState = { i: 0, revealed: false };
+  function ivData() { return window.STUDYFORGE_INTERVIEW; }
+
+  function renderInterviewHead() {
+    var I = ivData();
+    document.getElementById("iv-role").textContent = I.role;
+    document.getElementById("iv-company").textContent = I.company;
+    document.getElementById("iv-status").textContent = I.status;
+  }
+
+  function renderIvCard() {
+    var I = ivData(), q = I.questions[ivState.i];
+    document.getElementById("iv-count").textContent = "Question " + (ivState.i + 1) + " / " + I.questions.length;
+    document.getElementById("iv-type").textContent = q.type;
+    document.getElementById("iv-q").textContent = ivState.revealed ? q.approach : q.q;
+    document.getElementById("iv-hint").textContent = ivState.revealed ? "Click to see the question again" : "Click to reveal a suggested approach";
+    document.getElementById("iv-prev").disabled = ivState.i === 0;
+    document.getElementById("iv-next").disabled = ivState.i === I.questions.length - 1;
+  }
+  document.getElementById("iv-card").addEventListener("click", function () {
+    ivState.revealed = !ivState.revealed; renderIvCard();
+  });
+  document.getElementById("iv-card").addEventListener("keydown", function (e) {
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); ivState.revealed = !ivState.revealed; renderIvCard(); }
+  });
+  document.getElementById("iv-prev").onclick = function () {
+    if (ivState.i > 0) { ivState.i--; ivState.revealed = false; renderIvCard(); }
+  };
+  document.getElementById("iv-next").onclick = function () {
+    if (ivState.i < ivData().questions.length - 1) { ivState.i++; ivState.revealed = false; renderIvCard(); }
+  };
+
+  function renderIvAll() {
+    document.getElementById("iv-all-list").innerHTML = ivData().questions.map(function (q) {
+      return '<div class="iv-item"><span class="tag">' + q.type + '</span>' +
+        '<p>' + q.q + '</p><p class="approach">' + q.approach + '</p></div>';
+    }).join("");
+  }
+  document.getElementById("iv-tab-rehearse").onclick = function () {
+    this.classList.add("on"); document.getElementById("iv-tab-all").classList.remove("on");
+    document.getElementById("iv-rehearse-view").style.display = "";
+    document.getElementById("iv-all-view").style.display = "none";
+  };
+  document.getElementById("iv-tab-all").onclick = function () {
+    this.classList.add("on"); document.getElementById("iv-tab-rehearse").classList.remove("on");
+    document.getElementById("iv-rehearse-view").style.display = "none";
+    document.getElementById("iv-all-view").style.display = "";
+    renderIvAll();
+  };
+
+  /* ---- top-level app tabs ---- */
+  function setAppTab(tab) {
+    ["library", "languages", "interview"].forEach(function (t) {
+      document.getElementById("apptab-" + t).classList.toggle("on", t === tab);
+      document.getElementById("app-" + t).style.display = t === tab ? "" : "none";
+    });
+    if (tab === "languages") renderLanguages();
+    if (tab === "interview") { renderInterviewHead(); ivState = { i: 0, revealed: false }; renderIvCard(); }
+  }
+  document.getElementById("apptab-library").onclick = function () { setAppTab("library"); };
+  document.getElementById("apptab-languages").onclick = function () { setAppTab("languages"); };
+  document.getElementById("apptab-interview").onclick = function () { setAppTab("interview"); };
+
+  renderMaterials(); renderTitle(); setMode("cards");
+})();
+</script>
+</body>
+</html>

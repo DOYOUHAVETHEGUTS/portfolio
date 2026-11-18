@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parlay Outcome Simulator — what-if machine (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F1F1EE;--paper-lift:#FBFBF9;--ink:#15191D;--ink-muted:#5C6169;
+  --ink-faint:#8A8F96;--rule:#D7D6CF;--rule-soft:#E4E3DD;
+  --accent:#0E6B5E;--accent-dim:#0E6B5E1A;--signal:#A9660F;--panel:#232A31;
+  --win:#0E6B5E;--loss:#B4442E;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"Newsreader",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--display);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:clamp(1.25rem,4vw,2.5rem)}
+.eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-faint);margin:0}
+.demo-flag{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--signal);border:1px solid currentColor;padding:.2rem .45rem;margin-left:.5rem}
+h1{font-family:var(--body);font-size:clamp(1.7rem,4vw,2.3rem);font-weight:500;
+  letter-spacing:-.01em;margin:.3rem 0 .5rem}
+.lede{color:var(--ink-muted);max-width:70ch;margin:0 0 1.25rem;font-size:.93rem}
+.rule{border:0;border-top:1.5px solid var(--accent);margin:0 0 1.25rem}
+
+.controls{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:.85rem}
+.pill{font-family:var(--mono);font-size:.72rem;padding:.42rem .8rem;border:1px solid var(--rule);
+  border-radius:999px;background:var(--paper-lift);color:var(--ink-muted);cursor:pointer}
+.pill:hover:not(:disabled){border-color:var(--ink-faint);color:var(--ink)}
+.pill.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.pill.on-amber{background:var(--signal);border-color:var(--signal);color:#fff}
+.pill:disabled{opacity:.45;cursor:not-allowed}
+.pill:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:999px;overflow:hidden}
+.seg button{font-family:var(--mono);font-size:.72rem;padding:.42rem .85rem;border:0;
+  background:var(--paper-lift);color:var(--ink-muted);cursor:pointer}
+.seg button.on{background:var(--accent);color:#fff}
+input[type=search],input[type=number]{font-family:var(--mono);font-size:.78rem;
+  padding:.42rem .7rem;border:1px solid var(--rule);border-radius:6px;
+  background:var(--paper-lift);color:var(--ink)}
+input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.hint{font-family:var(--body);font-size:.86rem;color:var(--ink-muted);margin:.1rem 0 .85rem}
+
+.layout{display:grid;grid-template-columns:1fr 320px;gap:1.5rem;align-items:start}
+@media(max-width:820px){.layout{grid-template-columns:1fr}}
+
+.match{border:1px solid var(--rule-soft);border-radius:6px;background:var(--paper-lift);
+  padding:.7rem .8rem;margin-bottom:.6rem}
+.match-head{display:flex;justify-content:space-between;font-family:var(--mono);
+  font-size:.68rem;color:var(--ink-faint);margin-bottom:.5rem}
+.picks{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem}
+.pick{border:1px solid var(--rule);border-radius:4px;background:var(--paper);
+  padding:.5rem .4rem;cursor:pointer;text-align:center;font-size:.82rem;color:var(--ink)}
+.pick:hover{border-color:var(--ink-faint)}
+.pick.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.pick.on .price,.pick.on .book{color:#EAF3F1}
+.pick .price{display:block;font-family:var(--mono);font-size:.78rem;margin-top:.2rem}
+.pick .book{display:block;font-family:var(--mono);font-size:.58rem;color:var(--ink-faint);
+  letter-spacing:.06em;text-transform:uppercase}
+.pick:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.slip{position:sticky;top:1rem;background:var(--panel);color:#E9E7E0;border-radius:8px;
+  padding:1rem;font-size:.86rem}
+.slip h2{font-family:var(--body);font-size:1.15rem;font-weight:500;color:var(--signal);
+  margin:0 0 .6rem}
+.leg{display:flex;justify-content:space-between;gap:.5rem;padding:.4rem 0;
+  border-bottom:1px solid #3A424A}
+.leg-name{font-size:.83rem}
+.leg-name span{font-size:.7rem;color:#9AA2AA}
+.leg-price{font-family:var(--mono);font-size:.8rem;white-space:nowrap}
+.leg-x{background:none;border:0;color:#9AA2AA;cursor:pointer;font-size:.9rem;padding:0 0 0 .4rem}
+.leg-x:hover{color:#fff}
+.empty{color:#9AA2AA;font-size:.83rem;padding:.5rem 0 .8rem}
+.stakes{display:flex;gap:.35rem;margin:.7rem 0 .6rem;flex-wrap:wrap}
+.stake-btn{font-family:var(--mono);font-size:.72rem;padding:.32rem .6rem;border:1px solid #4A525A;
+  border-radius:4px;background:transparent;color:#E9E7E0;cursor:pointer}
+.stake-btn.on{background:var(--signal);border-color:var(--signal);color:#fff}
+.stake-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem}
+.stake-row label{font-size:.8rem}
+.stake-row input{width:100px;background:#1A2026;border-color:#4A525A;color:#E9E7E0}
+.totals{border-top:1px solid #3A424A;padding-top:.6rem}
+.tot{display:flex;justify-content:space-between;padding:.22rem 0;font-size:.86rem}
+.tot b{font-family:var(--mono);font-weight:500}
+.tot.big b{font-size:1rem;color:var(--signal)}
+.verdict{margin-top:.8rem;padding:.6rem;border-radius:4px;text-align:center;
+  font-size:.85rem;font-weight:600}
+.verdict.win{background:#1C7A5E;color:#fff}
+.verdict.loss{background:#8E3A2A;color:#fff}
+.clear{margin-top:.7rem;width:100%;font-family:var(--mono);font-size:.72rem;padding:.45rem;
+  border:1px solid #4A525A;border-radius:4px;background:transparent;color:#E9E7E0;cursor:pointer}
+.clear:hover{border-color:#8A929A}
+.note{font-family:var(--mono);font-size:.62rem;color:var(--ink-faint);
+  background:var(--accent-dim);padding:.6rem .75rem;border-radius:4px;margin-top:1.5rem;line-height:1.6}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">What-if machine <span class="demo-flag">Interactive demo</span></p>
+  <h1 id="title">World Cup 2026</h1>
+  <p class="lede">Tap a result on each match to add it to your slip. Odds shown are the best
+  price found across the three books for that pick. Outcomes are fixed, so the slip grades
+  itself — this shows what the picks would actually have returned.</p>
+  <hr class="rule">
+
+  <div class="controls" id="comps"></div>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Odds format">
+      <button id="fmt-am" class="on" type="button">American</button>
+      <button id="fmt-dec" type="button">Decimal</button>
+    </div>
+    <div class="seg" role="group" aria-label="Bet mode">
+      <button id="mode-parlay" class="on" type="button">Parlay</button>
+      <button id="mode-single" type="button">Single bet</button>
+    </div>
+    <input type="search" id="search" placeholder="Search team…" aria-label="Search team">
+  </div>
+
+  <p class="hint" id="hint">Parlay mode: pick one result per match, all legs must hit to pay out.</p>
+
+  <div class="controls" id="books"></div>
+
+  <div class="layout">
+    <div>
+      <div id="matches"></div>
+    </div>
+
+    <aside class="slip" aria-label="Bet slip">
+      <h2>Bet slip</h2>
+      <div id="legs"></div>
+      <div class="stakes" id="stakes"></div>
+      <div class="stake-row">
+        <label for="stake">Stake ($)</label>
+        <input type="number" id="stake" value="100" min="1" step="1">
+      </div>
+      <div class="totals">
+        <div class="tot"><span>Combined odds</span><b id="t-odds">—</b></div>
+        <div class="tot"><span>Stake</span><b id="t-stake">$100.00</b></div>
+        <div class="tot big"><span>Payout if won</span><b id="t-payout">—</b></div>
+      </div>
+      <div id="verdict"></div>
+      <button class="clear" id="clear" type="button">Clear slip</button>
+      <p class="sr" role="status" aria-live="polite" id="live"></p>
+    </aside>
+  </div>
+
+  <p class="note">Sample dataset. Mock odds across three named books with fixed match
+  outcomes so a slip can be graded. Nothing is live, no sportsbook is contacted, and no
+  wager of any kind can be placed here — this is a what-if calculator built to answer
+  "how much would that have returned," not a betting product.</p>
+
+</div>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  var D = window.PARLAY_DATA;
+  var state = { comp: "wc26", book: "best", fmt: "am", mode: "parlay",
+                q: "", stake: 100, picks: {} };
+
+  /* ---- odds helpers ---- */
+  function toDec(am) { return am > 0 ? 1 + am / 100 : 1 + 100 / Math.abs(am); }
+  function toAm(dec) {
+    return dec >= 2 ? Math.round((dec - 1) * 100) : -Math.round(100 / (dec - 1));
+  }
+  function fmtAm(am) { return (am > 0 ? "+" : "") + am; }
+  function fmtOdds(am) {
+    return state.fmt === "am" ? fmtAm(am) : toDec(am).toFixed(2);
+  }
+  function money(n) {
+    return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  /* Best price across books for a match/outcome index, or a specific book. */
+  function priceFor(m, i) {
+    if (state.book !== "best") return { am: m.odds[state.book][i], book: state.book };
+    var best = null;
+    D.books.forEach(function (b) {
+      var am = m.odds[b][i];
+      if (!best || toDec(am) > toDec(best.am)) best = { am: am, book: b };
+    });
+    return best;
+  }
+
+  var OUTCOMES = ["home", "draw", "away"];
+
+  /* ---- rendering ---- */
+  function renderComps() {
+    document.getElementById("comps").innerHTML = D.competitions.map(function (c) {
+      return '<button type="button" class="pill' + (state.comp === c.id ? " on" : "") + '"' +
+        (c.available ? "" : " disabled") + ' data-comp="' + c.id + '">' +
+        c.label + (c.available ? "" : " (coming soon)") + "</button>";
+    }).join("");
+  }
+
+  function renderBooks() {
+    var opts = [{ id: "best", label: "Best odds (any book)" }].concat(
+      D.books.map(function (b) { return { id: b, label: b }; }));
+    document.getElementById("books").innerHTML = opts.map(function (o) {
+      return '<button type="button" class="pill' +
+        (state.book === o.id ? (o.id === "best" ? " on-amber" : " on") : "") +
+        '" data-book="' + o.id + '">' + o.label + "</button>";
+    }).join("");
+  }
+
+  function visibleMatches() {
+    var q = state.q.toLowerCase();
+    return D.matches.filter(function (m) {
+      if (m.comp !== state.comp) return false;
+      if (!q) return true;
+      return (m.home + " " + m.away).toLowerCase().indexOf(q) > -1;
+    });
+  }
+
+  function renderMatches() {
+    var list = visibleMatches();
+    var host = document.getElementById("matches");
+    if (!list.length) {
+      host.innerHTML = '<p class="empty" style="color:var(--ink-muted)">No matches for that search.</p>';
+      return;
+    }
+    host.innerHTML = list.map(function (m) {
+      var labels = [m.home, "Draw", m.away];
+      var cells = labels.map(function (lab, i) {
+        var p = priceFor(m, i);
+        var on = state.picks[m.id] && state.picks[m.id].i === i;
+        return '<button type="button" class="pick' + (on ? " on" : "") + '"' +
+          ' data-m="' + m.id + '" data-i="' + i + '"' +
+          ' aria-pressed="' + (on ? "true" : "false") + '">' + lab +
+          '<span class="price">' + fmtOdds(p.am) + "</span>" +
+          '<span class="book">' + p.book + "</span></button>";
+      }).join("");
+      return '<div class="match"><div class="match-head"><span>' + m.home +
+        " vs " + m.away + "</span><span>" + m.date + "</span></div>" +
+        '<div class="picks">' + cells + "</div></div>";
+    }).join("");
+  }
+
+  function renderSlip() {
+    var ids = Object.keys(state.picks);
+    var legsEl = document.getElementById("legs");
+
+    if (!ids.length) {
+      legsEl.innerHTML = '<p class="empty">No picks yet — tap a result to build a slip.</p>';
+      document.getElementById("t-odds").textContent = "—";
+      document.getElementById("t-payout").textContent = "—";
+      document.getElementById("t-stake").textContent = money(state.stake);
+      document.getElementById("verdict").innerHTML = "";
+      return;
+    }
+
+    var combined = 1, allHit = true, hits = 0;
+    var rows = ids.map(function (id) {
+      var pick = state.picks[id];
+      var m = D.matches.find(function (x) { return x.id === id; });
+      var labels = [m.home, "Draw", m.away];
+      var p = priceFor(m, pick.i);
+      combined *= toDec(p.am);
+      var hit = OUTCOMES[pick.i] === m.result;
+      if (hit) hits++; else allHit = false;
+      return '<div class="leg"><span class="leg-name">' + labels[pick.i] +
+        ' <span>@ ' + p.book + "</span></span>" +
+        '<span class="leg-price">' + fmtOdds(p.am) +
+        '<button class="leg-x" type="button" data-rm="' + id + '" aria-label="Remove ' +
+        labels[pick.i] + '">✕</button></span></div>';
+    }).join("");
+    legsEl.innerHTML = rows;
+
+    var stake = state.stake;
+    var payout, oddsLabel, won;
+
+    if (state.mode === "parlay") {
+      payout = stake * combined;
+      oddsLabel = state.fmt === "am" ? fmtAm(toAm(combined)) : combined.toFixed(2);
+      won = allHit;
+    } else {
+      /* Single bets: each leg staked independently. */
+      payout = 0;
+      ids.forEach(function (id) {
+        var pick = state.picks[id];
+        var m = D.matches.find(function (x) { return x.id === id; });
+        if (OUTCOMES[pick.i] === m.result) payout += stake * toDec(priceFor(m, pick.i).am);
+      });
+      oddsLabel = ids.length + " single bet" + (ids.length > 1 ? "s" : "");
+      won = hits > 0;
+      stake = state.stake * ids.length;
+    }
+
+    document.getElementById("t-odds").textContent = oddsLabel;
+    document.getElementById("t-stake").textContent = money(stake);
+    document.getElementById("t-payout").textContent = money(payout);
+
+    var profit = payout - stake;
+    var v = document.getElementById("verdict");
+    var msg;
+    if (state.mode === "parlay") {
+      msg = won
+        ? "This bet would have hit — you'd have won " + money(profit) + " in profit."
+        : "This bet would have lost — " + hits + " of " + ids.length +
+          " legs hit, so the slip pays nothing.";
+    } else {
+      msg = hits + " of " + ids.length + " singles hit — " +
+        (profit >= 0 ? "a net gain of " + money(profit)
+                     : "a net loss of " + money(Math.abs(profit))) + ".";
+      won = profit >= 0;
+    }
+    v.className = "";
+    v.innerHTML = '<div class="verdict ' + (won ? "win" : "loss") + '">' + msg + "</div>";
+    document.getElementById("live").textContent = msg;
+  }
+
+  function renderAll() { renderComps(); renderBooks(); renderMatches(); renderSlip(); }
+
+  /* ---- events ---- */
+  document.getElementById("comps").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-comp]");
+    if (!b || b.disabled) return;
+    state.comp = b.dataset.comp;
+    state.picks = {};
+    var c = D.competitions.find(function (x) { return x.id === state.comp; });
+    document.getElementById("title").textContent = c.label;
+    renderAll();
+  });
+
+  document.getElementById("books").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-book]");
+    if (!b) return;
+    state.book = b.dataset.book;
+    renderBooks(); renderMatches(); renderSlip();
+  });
+
+  document.getElementById("matches").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-m]");
+    if (!b) return;
+    var id = b.dataset.m, i = +b.dataset.i;
+    if (state.picks[id] && state.picks[id].i === i) delete state.picks[id];
+    else state.picks[id] = { i: i };
+    renderMatches(); renderSlip();
+  });
+
+  document.getElementById("legs").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-rm]");
+    if (!b) return;
+    delete state.picks[b.dataset.rm];
+    renderMatches(); renderSlip();
+  });
+
+  function setFmt(f) {
+    state.fmt = f;
+    document.getElementById("fmt-am").classList.toggle("on", f === "am");
+    document.getElementById("fmt-dec").classList.toggle("on", f === "dec");
+    renderMatches(); renderSlip();
+  }
+  document.getElementById("fmt-am").onclick = function () { setFmt("am"); };
+  document.getElementById("fmt-dec").onclick = function () { setFmt("dec"); };
+
+  function setMode(m) {
+    state.mode = m;
+    document.getElementById("mode-parlay").classList.toggle("on", m === "parlay");
+    document.getElementById("mode-single").classList.toggle("on", m === "single");
+    document.getElementById("hint").textContent = m === "parlay"
+      ? "Parlay mode: pick one result per match, all legs must hit to pay out."
+      : "Single-bet mode: each pick is staked separately, so legs win or lose on their own.";
+    renderSlip();
+  }
+  document.getElementById("mode-parlay").onclick = function () { setMode("parlay"); };
+  document.getElementById("mode-single").onclick = function () { setMode("single"); };
+
+  document.getElementById("search").addEventListener("input", function (e) {
+    state.q = e.target.value; renderMatches();
+  });
+
+  var QUICK = [10, 25, 50, 100];
+  document.getElementById("stakes").innerHTML = QUICK.map(function (v) {
+    return '<button type="button" class="stake-btn' + (v === 100 ? " on" : "") +
+      '" data-stake="' + v + '">$' + v + "</button>";
+  }).join("");
+  document.getElementById("stakes").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-stake]");
+    if (!b) return;
+    state.stake = +b.dataset.stake;
+    document.getElementById("stake").value = state.stake;
+    syncStakeBtns(); renderSlip();
+  });
+  function syncStakeBtns() {
+    document.querySelectorAll("[data-stake]").forEach(function (b) {
+      b.classList.toggle("on", +b.dataset.stake === state.stake);
+    });
+  }
+  document.getElementById("stake").addEventListener("input", function (e) {
+    var v = parseFloat(e.target.value);
+    state.stake = isNaN(v) || v < 0 ? 0 : v;
+    syncStakeBtns(); renderSlip();
+  });
+
+  document.getElementById("clear").onclick = function () {
+    state.picks = {}; renderMatches(); renderSlip();
+  };
+
+  renderAll();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Event Booking Flow — Demo</title>
+<style>
+:root{--bg:#f7f3ec;--card:#fff;--ink:#2b241d;--mute:#7a6d5e;--line:#e6dccb;--acc:#9a7b3c;--acc2:#2b241d;--ok:#2e7d4f;--warn:#b7791f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,Segoe UI,Helvetica,Arial,sans-serif}
+header{background:var(--acc2);color:#f3e6c4;padding:14px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header b{font-family:Georgia,serif;font-size:20px;font-weight:normal}header .tag{font-size:12px;background:#4a3d2f;padding:3px 9px;border-radius:99px;color:#e9d9b0}
+header nav{margin-left:auto;display:flex;gap:6px}header nav button{background:none;border:1px solid #6b5a45;color:#f3e6c4;padding:6px 12px;border-radius:99px;cursor:pointer;font-size:13px}
+header nav button.on{background:#f3e6c4;color:var(--acc2)}
+main{max-width:860px;margin:0 auto;padding:22px 16px 60px}
+.banner{background:#fff7e6;border:1px solid #f0d9a8;color:#7a5a12;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px}
+h1{font-family:Georgia,serif;font-weight:normal;font-size:26px;margin:0 0 6px}h2{font-family:Georgia,serif;font-weight:normal;font-size:20px;margin:0 0 12px}
+.mute{color:var(--mute)}.small{font-size:13px}
+.steps{display:flex;gap:6px;margin:0 0 16px;flex-wrap:wrap}.steps span{font-size:12px;padding:4px 10px;border-radius:99px;background:#efe6d6;color:var(--mute)}
+.steps span.on{background:var(--acc);color:#fff}.steps span.done{background:#d8ead9;color:var(--ok)}
+.choice{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:600px){.choice{grid-template-columns:1fr}}
+.opt{border:1.5px solid var(--line);border-radius:12px;padding:16px;cursor:pointer;background:#fffdf9;text-align:left;font:inherit;color:inherit}
+.opt:hover{border-color:var(--acc)}.opt.on{border-color:var(--acc);box-shadow:0 0 0 3px #9a7b3c22}.opt b{display:block;font-size:16px;margin-bottom:4px}
+label{display:block;font-size:13px;color:var(--mute);margin:12px 0 4px}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font:inherit;background:#fffdf9;color:var(--ink)}
+textarea{min-height:110px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:600px){.row{grid-template-columns:1fr}}
+.btns{display:flex;gap:10px;justify-content:space-between;margin-top:18px;flex-wrap:wrap}
+.btn{background:var(--acc);color:#fff;border:0;border-radius:99px;padding:11px 22px;font-weight:600;cursor:pointer;font:inherit}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}.btn:disabled{opacity:.45;cursor:not-allowed}
+table{width:100%;border-collapse:collapse}td,th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+td.n{text-align:right;font-variant-numeric:tabular-nums}tr.tot td{font-weight:700;border-bottom:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:99px;overflow:hidden}.seg button{border:0;background:none;padding:7px 14px;cursor:pointer;font:inherit;font-size:13px}.seg button.on{background:var(--acc2);color:#fff}
+.doc{border:1px solid var(--line);border-radius:10px;padding:22px;background:#fffefb;font-family:Georgia,serif;font-size:14.5px}
+.doc h3{text-align:center;margin:0 0 4px;font-weight:normal;letter-spacing:.05em}.doc .ref{text-align:center;color:var(--mute);font-family:inherit;font-size:13px;margin-bottom:14px}
+.doc ol{padding-left:18px}.sig{font-family:"Brush Script MT","Segoe Script",cursive;font-size:26px;color:#1d3d6b}
+.pill{display:inline-block;font-size:12px;padding:3px 10px;border-radius:99px;background:#efe6d6;color:var(--mute)}.pill.ok{background:#d8ead9;color:var(--ok)}.pill.warn{background:#fbeccc;color:var(--warn)}
+.email{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:10px}.email .top{background:var(--acc2);color:#f3e6c4;padding:10px 16px;font-family:Georgia,serif}.email .body{padding:16px;background:#fff}
+.chk{display:flex;gap:8px;align-items:flex-start;margin-top:12px}.chk input{width:auto;margin-top:4px}
+.hint{font-size:12px;color:var(--mute);margin-top:4px}
+</style>
+</head>
+<body>
+<header><b>Event Studio</b><span class="tag">Demo · fictional business, sample pricing</span>
+<nav><button id="v-client" class="on">Client view</button><button id="v-owner">Owner view</button></nav></header>
+<main id="app"></main>
+<script>
+const $=s=>document.querySelector(s);
+const money=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const DEPOSIT=250;
+const STEPS=['Path','Event','Details','Quote','Agreement','Deposit'];
+let S={step:0,path:'',ev:{type:'Birthday party',date:'',start:'15:00',end:'21:00',guests:60,venue:'Indoor hall',city:''},mode:'guided',
+  answers:{theme:'',colors:'',must:''},free:'',rentals:{'Table linens (set of 10)':0,'Centerpieces':0,'Backdrop':0,'Chair covers (set of 10)':0},
+  name:'',email:'',signed:false,sigName:'',agree:false,paid:false,ref:''};
+let BOOKS=[{ref:'EVS-2027-001',name:'Test Client A',type:'Holiday party',date:'2026-12-12',guests:120,total:2140,status:'Deposit held'},
+           {ref:'EVS-2027-002',name:'Test Client B',type:'Wedding reception',date:'2027-03-06',guests:150,total:3385,status:'Sent to sign'}];
+let VIEW='client';
+const RENT={'Table linens (set of 10)':45,'Centerpieces':18,'Backdrop':120,'Chair covers (set of 10)':30};
+const VENUE={'Indoor hall':0,'Outdoor / tent':180,'Private home':60,'Restaurant / venue room':40};
+function quote(){const L=[];const g=+S.ev.guests||0;
+  if(S.path==='plan'){L.push(['Planning and coordination (sample package)',650]);L.push([`Décor setup sized to ${g} guests`,Math.max(300,Math.round(g*7.5))]);
+    L.push(['Day-of coordinator, '+hours()+' h',Math.round(hours()*45)]);}
+  Object.entries(S.rentals).forEach(([k,n])=>{if(n>0)L.push([`${k} × ${n}`,n*RENT[k]])});
+  const v=VENUE[S.ev.venue]||0;if(v)L.push([`${S.ev.venue} setup allowance`,v]);
+  if(S.path==='rent'&&L.length)L.push(['Delivery and collection',85]);
+  const total=L.reduce((a,b)=>a+b[1],0);return {lines:L,total}}
+function hours(){const [a,b]=[S.ev.start,S.ev.end].map(t=>{const[h,m]=t.split(':').map(Number);return h+m/60});let d=b-a;if(d<=0)d+=24;return Math.round(d*2)/2}
+function steps(){return `<div class="steps">${STEPS.map((s,i)=>`<span class="${i===S.step?'on':i<S.step?'done':''}">${i+1}. ${s}</span>`).join('')}</div>`}
+function nav(back,next,nextOk=true,label='Continue'){return `<div class="btns">${back?'<button class="btn ghost" id="back">Back</button>':'<span></span>'}${next?`<button class="btn" id="next" ${nextOk?'':'disabled'}>${label}</button>`:''}</div>`}
+function render(){if(VIEW==='owner')return owner();const A=$('#app');let h=`<div class="banner">Portfolio demo of a booking and contracting system built for a small event-décor business. The business, services and prices here are placeholders, and nothing is sent or charged.</div>`;
+  h+=`<div class="card">${steps()}`;
+  if(S.step===0){h+=`<h1>Plan your event</h1><p class="mute">About five minutes. Pick a path; you can describe the event in your own words or answer a few questions.</p>
+    <div class="choice"><button class="opt ${S.path==='plan'?'on':''}" data-path="plan"><b>Plan my event</b><span class="mute small">Planning, décor and day-of coordination</span></button>
+    <button class="opt ${S.path==='rent'?'on':''}" data-path="rent"><b>Rent décor only</b><span class="mute small">Pick pieces; delivery and collection or pickup</span></button></div>${nav(false,true,!!S.path)}`}
+  if(S.step===1){const e=S.ev;h+=`<h2>The event</h2><div class="row"><div><label>Event type</label><select id="type">${['Birthday party','Wedding reception','Baby shower','Holiday party','Corporate event','Graduation'].map(x=>`<option ${x===e.type?'selected':''}>${x}</option>`).join('')}</select></div>
+    <div><label>Date</label><input type="date" id="date" value="${e.date}"></div></div>
+    <div class="row"><div><label>Start</label><input type="time" id="start" value="${e.start}"></div><div><label>End</label><input type="time" id="end" value="${e.end}"></div></div>
+    <div class="row"><div><label>Guests</label><input type="number" id="guests" min="1" max="600" value="${e.guests}"></div><div><label>Venue type</label><select id="venue">${Object.keys(VENUE).map(x=>`<option ${x===e.venue?'selected':''}>${x}</option>`).join('')}</select></div></div>
+    <label>City</label><input id="city" placeholder="e.g. Springfield" value="${e.city}">${nav(true,true,!!e.date&&e.guests>0)}`}
+  if(S.step===2){h+=`<h2>${S.path==='plan'?'Tell us about it':'Choose pieces'}</h2>`;
+    if(S.path==='plan'){h+=`<div class="seg"><button data-mode="guided" class="${S.mode==='guided'?'on':''}">Answer questions</button><button data-mode="free" class="${S.mode==='free'?'on':''}">Describe it</button></div>`;
+      h+=S.mode==='guided'?`<label>Theme or style</label><input id="a-theme" value="${S.answers.theme}" placeholder="e.g. garden, black and gold, rustic">
+        <label>Colors</label><input id="a-colors" value="${S.answers.colors}" placeholder="e.g. ivory and sage"><label>Must-haves</label><input id="a-must" value="${S.answers.must}" placeholder="e.g. balloon arch, head table">`
+       :`<label>In your own words</label><textarea id="free" placeholder="A 40th birthday dinner, gold and white, long tables, a photo wall...">${S.free}</textarea><div class="hint">Free text is kept with the request; the owner turns it into the plan.</div>`;
+      h+=`<label style="margin-top:18px">Add rentals (optional)</label>`}
+    h+=`<table><tr><th>Item</th><th class="n">Qty</th><th class="n">Each</th></tr>${Object.keys(RENT).map(k=>`<tr><td>${k}</td><td class="n"><input type="number" min="0" max="40" data-rent="${k}" value="${S.rentals[k]}" style="width:80px"></td><td class="n">${money(RENT[k])}</td></tr>`).join('')}</table>
+    <div class="hint">Sample prices for the demo, shown at booking as on the real site.</div>`;
+    const ok=S.path==='plan'||Object.values(S.rentals).some(n=>n>0);h+=nav(true,true,ok,'See my quote')}
+  if(S.step===3){const q=quote();h+=`<h2>Your quote</h2><p class="mute small">Sized to ${S.ev.guests} guests at a ${S.ev.venue.toLowerCase()}, ${hours()} hours.</p>
+    <table><tr><th>Line</th><th class="n">Amount</th></tr>${q.lines.map(l=>`<tr><td>${l[0]}</td><td class="n">${money(l[1])}</td></tr>`).join('')}
+    <tr class="tot"><td>Estimated total</td><td class="n">${money(q.total)}</td></tr><tr><td>Deposit to hold the date</td><td class="n">${money(DEPOSIT)}</td></tr></table>
+    <div class="row"><div><label>Your name</label><input id="name" value="${S.name}" placeholder="Test Client"></div><div><label>Email</label><input id="email" type="email" value="${S.email}" placeholder="you@example.com"></div></div>
+    <div class="hint">Submitting creates the agreement. In the real system the client also gets a confirmation email.</div>${nav(true,true,!!S.name&&/@/.test(S.email),'Create agreement')}`}
+  if(S.step===4){const q=quote();h+=`<h2>Review and sign</h2>${emailPreview()}<div class="doc" style="margin-top:14px"><h3>EVENT SERVICES AGREEMENT</h3><div class="ref">Reference ${S.ref} · Demo document, not a contract</div>
+    <p>Between <b>Event Studio</b> ("the Company") and <b>${esc(S.name)}</b> ("the Client").</p>
+    <table><tr><td>Event</td><td>${esc(S.ev.type)}</td></tr><tr><td>Date</td><td>${fmtDate(S.ev.date)}</td></tr><tr><td>Time</td><td>${S.ev.start} – ${S.ev.end}</td></tr>
+    <tr><td>Guests</td><td>${S.ev.guests}</td></tr><tr><td>Venue</td><td>${esc(S.ev.venue)}${S.ev.city?', '+esc(S.ev.city):''}</td></tr><tr><td>Estimated total</td><td>${money(q.total)}</td></tr></table>
+    <ol><li>A deposit of ${money(DEPOSIT)} holds the date once this agreement is signed.</li><li>The balance is due before the event; final counts are confirmed with the venue.</li>
+    <li>Rented pieces are returned in the condition received.</li><li>Sample terms for the demo.</li></ol>
+    ${S.signed?`<p>Signed: <span class="sig">${esc(S.sigName)}</span> <span class="pill ok">Signed ${new Date().toLocaleDateString()}</span></p>`:''}</div>
+    ${S.signed?'':`<label>Type your full name to sign</label><input id="sig" value="${S.sigName}" placeholder="${esc(S.name)}"><div class="chk"><input type="checkbox" id="agree" ${S.agree?'checked':''}><span class="small">I agree to the terms above.</span></div>`}
+    ${nav(!S.signed,true,S.signed||(S.agree&&S.sigName.trim().length>2),S.signed?'Continue to deposit':'Sign agreement')}`}
+  if(S.step===5){h+=`<h2>Hold your date</h2>${S.paid?`<p><span class="pill ok">Deposit held</span> Your date, ${fmtDate(S.ev.date)}, is reserved. Reference <b>${S.ref}</b>.</p><p class="mute small">In the real system the owner sees this booking move to "Deposit held". Open the Owner view to see it.</p>
+      <div class="btns"><span></span><button class="btn ghost" id="restart">Start another test booking</button></div>`
+     :`<p>A deposit of <b>${money(DEPOSIT)}</b> holds your date. The balance of ${money(quote().total-DEPOSIT)} is due before the event.</p>
+      <div class="banner" style="margin-top:10px">Demo only: this button records the deposit in your browser. No payment is taken.</div>${nav(false,true,true,'Pay '+money(DEPOSIT)+' deposit (simulated)')}`}`}
+  h+='</div>';A.innerHTML=h;wire()}
+function emailPreview(){return `<div class="email"><div class="top">Event Studio</div><div class="body"><b>Your Event Services Agreement is ready to sign</b><p class="small">Hi ${esc(S.name.split(' ')[0]||'there')}, your agreement has been finalized and is attached. Review it and sign below; it takes less than a minute. Your deposit of ${money(DEPOSIT)} holds your date once signed.</p><p class="small mute">Reference ${S.ref} · ${esc(S.ev.type)} · ${fmtDate(S.ev.date)} · ${S.ev.guests} guests</p></div></div>`}
+function fmtDate(d){if(!d)return'—';const x=new Date(d+'T12:00');return x.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}
+function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function val(id){const e=$('#'+id);return e?e.value:''}
+function collect(){if(S.step===1){Object.assign(S.ev,{type:val('type'),date:val('date'),start:val('start'),end:val('end'),guests:+val('guests'),venue:val('venue'),city:val('city')})}
+  if(S.step===2){if(S.path==='plan'){if(S.mode==='guided')S.answers={theme:val('a-theme'),colors:val('a-colors'),must:val('a-must')};else S.free=val('free')}
+    document.querySelectorAll('[data-rent]').forEach(i=>S.rentals[i.dataset.rent]=Math.max(0,+i.value||0))}
+  if(S.step===3){S.name=val('name');S.email=val('email')}
+  if(S.step===4&&!S.signed){S.sigName=val('sig');S.agree=!!($('#agree')&&$('#agree').checked)}}
+function wire(){document.querySelectorAll('[data-path]').forEach(b=>b.onclick=()=>{S.path=b.dataset.path;render()});
+  document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{collect();S.mode=b.dataset.mode;render()});
+  document.querySelectorAll('input,select,textarea').forEach(i=>i.addEventListener('input',()=>{collect();const n=$('#next');if(!n)return;
+    const ok=S.step===1?(!!S.ev.date&&S.ev.guests>0):S.step===2?(S.path==='plan'||Object.values(S.rentals).some(v=>v>0)):S.step===3?(!!S.name&&/@/.test(S.email)):S.step===4?(S.signed||(S.agree&&S.sigName.trim().length>2)):true;n.disabled=!ok}));
+  const b=$('#back');if(b)b.onclick=()=>{collect();S.step--;render()};
+  const r=$('#restart');if(r)r.onclick=()=>{S=Object.assign(S,{step:0,path:'',signed:false,paid:false,sigName:'',agree:false,ref:''});render()};
+  const n=$('#next');if(n)n.onclick=()=>{collect();
+    if(S.step===3&&!S.ref){S.ref='EVS-2027-'+String(BOOKS.length+1).padStart(3,'0');BOOKS.push({ref:S.ref,name:S.name,type:S.ev.type,date:S.ev.date,guests:S.ev.guests,total:quote().total,status:'Sent to sign'})}
+    if(S.step===4&&!S.signed){S.signed=true;bk().status='Signed';render();return}
+    if(S.step===5){S.paid=true;bk().status='Deposit held';render();return}
+    S.step++;render()}}
+function bk(){return BOOKS.find(b=>b.ref===S.ref)||{}}
+function owner(){const tone=s=>s==='Deposit held'?'ok':s==='Signed'?'':'warn';
+  $('#app').innerHTML=`<div class="banner">Owner view (demo). In the real system this sits behind a sign-in. Rows created in the client view this session appear here.</div>
+  <div class="card"><h2>Bookings</h2><table><tr><th>Reference</th><th>Client</th><th>Event</th><th>Date</th><th class="n">Guests</th><th class="n">Est. total</th><th>Status</th></tr>
+  ${BOOKS.slice().reverse().map(b=>`<tr><td>${b.ref}</td><td>${esc(b.name)}</td><td>${esc(b.type)}</td><td>${b.date||'—'}</td><td class="n">${b.guests}</td><td class="n">${money(b.total)}</td><td><span class="pill ${tone(b.status)}">${b.status}</span></td></tr>`).join('')}</table>
+  <p class="hint">Every booking moves Sent to sign → Signed → Deposit held. References are numbered in order per booking year.</p></div>`}
+$('#v-client').onclick=()=>{VIEW='client';$('#v-client').classList.add('on');$('#v-owner').classList.remove('on');render()};
+$('#v-owner').onclick=()=>{VIEW='owner';$('#v-owner').classList.add('on');$('#v-client').classList.remove('on');render()};
+render();
+</script>
+</body>
+</html>

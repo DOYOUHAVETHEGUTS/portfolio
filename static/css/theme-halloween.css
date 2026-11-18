@@ -1,0 +1,105 @@
+/* ==========================================================================
+   Halloween / horror theme — overlay on site.css, loaded only for
+   `--theme halloween`. Near-black night ground, pumpkin orange, toxic
+   phosphor green, blood-red signal. Atmospheric and a little eerie, but still
+   a legible professional portfolio. Layout and content untouched.
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Creepster&family=Fraunces:opsz,wght@9..144,400;9..144,600&display=swap");
+
+:root[data-variant="halloween"],
+[data-variant="halloween"] {
+  --paper:      #0E0B12;   /* midnight */
+  --paper-lift: #17121D;
+  --ink:        #EDE6DC;
+  --ink-muted:  #B69FB0;
+  --ink-faint:  #7C6A82;
+  --rule:       #322540;
+  --rule-soft:  #241A30;
+  --accent:     #FF7518;   /* pumpkin */
+  --accent-dim: #FF751822;
+  --signal:     #8B1E1E;   /* blood red */
+  --panel:      #08060B;
+
+  --display: "Fraunces", "Archivo", Georgia, serif;
+  --spooky: "Creepster", "Fraunces", cursive;
+}
+
+/* Only the biggest display moments use the horror face — the wordmark and the
+   hero — so it lands as a motif, not a gimmick that hurts reading. Section
+   headings take the atmospheric serif instead. */
+[data-variant="halloween"] .wordmark-text strong,
+[data-variant="halloween"] .hero-statement {
+  font-family: var(--spooky);
+  letter-spacing: 0.02em;
+  font-weight: 400;
+}
+[data-variant="halloween"] .hero-statement { color: var(--accent); text-shadow: 0 0 18px #FF751855; }
+[data-variant="halloween"] .hero-statement em { color: var(--ink); font-style: normal; }
+
+[data-variant="halloween"] .section-title,
+[data-variant="halloween"] .work-title,
+[data-variant="halloween"] .page-head h1,
+[data-variant="halloween"] .case-head h1,
+[data-variant="halloween"] .prose h2 {
+  font-family: var(--display);
+}
+
+/* Glowing pumpkin wordmark. */
+[data-variant="halloween"] .wordmark-mark {
+  background: var(--accent);
+  color: var(--panel);
+  box-shadow: 0 0 14px #FF751877;
+}
+
+/* Buttons and chips: pumpkin fill with an eerie glow on hover. */
+[data-variant="halloween"] .button {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--panel);
+}
+[data-variant="halloween"] .button:hover {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--ink);
+  box-shadow: 0 0 16px #8B1E1E88;
+}
+[data-variant="halloween"] .button.ghost { background: transparent; color: var(--ink); }
+[data-variant="halloween"] .chip.is-active { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+[data-variant="halloween"] .board { border-top-color: var(--accent); }
+[data-variant="halloween"] .cell-year em { color: var(--accent); }
+[data-variant="halloween"] a { text-decoration-color: var(--accent); }
+
+/* Night background with a faint drifting fog wash. */
+[data-variant="halloween"] body {
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(80% 50% at 50% 0%, #1B1226 0%, transparent 60%),
+    radial-gradient(60% 40% at 100% 100%, #2A0E0E44 0%, transparent 55%);
+  background-attachment: fixed;
+}
+[data-variant="halloween"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(50% 40% at 20% 30%, #FF751810 0%, transparent 60%),
+             radial-gradient(50% 40% at 80% 70%, #8B1E1E10 0%, transparent 60%);
+  animation: hw-fog 24s ease-in-out infinite alternate;
+}
+[data-variant="halloween"] .masthead,
+[data-variant="halloween"] main,
+[data-variant="halloween"] .footer { position: relative; z-index: 1; }
+[data-variant="halloween"] .masthead { background: var(--panel); border-bottom-color: var(--accent); }
+[data-variant="halloween"] .footer { background: var(--panel); border-top-color: var(--accent); }
+
+@keyframes hw-fog {
+  from { transform: translateX(-3%); opacity: .7; }
+  to   { transform: translateX(3%);  opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-variant="halloween"] body::before { animation: none; }
+}
+
+[data-variant="halloween"] :focus-visible { outline-color: var(--accent); }

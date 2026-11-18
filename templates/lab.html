@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Lab — {{ site.name }}{% endblock %}
+{% block description %}Short technical writeups from a home security lab: threat scenario, environment, method, detection, and hardening.{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Lab</p>
+  <h1>Security notebook</h1>
+  <p class="lede">Lab-based work in an isolated environment I own. Each writeup
+  follows the same shape — scenario, topology, what I did, what it left behind in
+  the logs, and how you'd detect or stop it.</p>
+</section>
+
+<section class="board-section">
+  <div class="card-grid wide">
+    {% for entry in lab %}
+    <a class="card" href="{{ entry.url }}">
+      <p class="eyebrow">{{ entry.date }}{% if entry.technique %} · {{ entry.technique }}{% endif %}</p>
+      <h2>{{ entry.title }}</h2>
+      <p class="card-summary">{{ entry.summary }}</p>
+      <p class="stack-line">{{ entry.stack | commas }}</p>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

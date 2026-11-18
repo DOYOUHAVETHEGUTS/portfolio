@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StarStruck — engineering career map (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F1F1EE;--paper-lift:#FBFBF9;--ink:#15191D;--ink-muted:#5C6169;
+  --ink-faint:#8A8F96;--rule:#D7D6CF;--rule-soft:#E4E3DD;
+  --accent:#0E6B5E;--accent-dim:#0E6B5E1A;--signal:#A9660F;--panel:#171C21;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"Newsreader",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  /* node-kind palette */
+  --k-field:#0E6B5E;--k-skill:#2B6CB0;--k-education:#A9660F;--k-role:#7A3E9D;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--display);font-size:15px;line-height:1.5}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin:0}
+
+.head{border-bottom:1px solid var(--ink);padding:1rem 1.5rem .85rem;display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap}
+.head h1{font-size:1.05rem;font-weight:600;letter-spacing:-.01em;margin:.2rem 0 0}
+.demo-flag{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--signal);border:1px solid currentColor;padding:.2rem .45rem;margin-left:.5rem}
+
+.toolbar{display:flex;gap:.4rem;align-items:center;padding:.8rem 1.5rem;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.toolbar .eyebrow{margin-right:.3rem}
+.chip{font-family:var(--mono);font-size:.66rem;letter-spacing:.05em;background:none;border:1px solid var(--rule);color:var(--ink-muted);padding:.35rem .6rem}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.chip .sw{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.4rem;vertical-align:middle}
+
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 320px;min-height:640px}
+@media(max-width:860px){.stage{grid-template-columns:minmax(0,1fr)}}
+.canvas{position:relative;border-right:1px solid var(--rule)}
+.canvas svg{width:100%;height:100%;display:block;min-height:640px;cursor:grab}
+.canvas svg:active{cursor:grabbing}
+.hint{position:absolute;left:1rem;bottom:1rem;font-family:var(--mono);font-size:.6rem;color:var(--ink-faint);background:var(--paper);padding:.3rem .5rem;border:1px solid var(--rule-soft)}
+
+.link{stroke:var(--rule);stroke-opacity:.7}
+.node-dot{stroke:var(--paper);stroke-width:1.5px;cursor:pointer}
+.node-label{font-family:var(--display);font-size:11px;fill:var(--ink);paint-order:stroke;stroke:var(--paper);stroke-width:3px;pointer-events:none}
+.node.dim{opacity:.18}
+.node.focus .node-dot{stroke:var(--ink);stroke-width:2.5px}
+
+.inspect{padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.85rem}
+.inspect .kind{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;padding:.15rem .45rem;border:1px solid currentColor;align-self:flex-start}
+.inspect h2{font-size:1.3rem;font-weight:600;letter-spacing:-.02em;margin:0}
+.inspect p.sum{font-family:var(--body);font-size:1.02rem;color:var(--ink-muted);margin:0}
+.chain{font-family:var(--mono);font-size:.64rem;color:var(--ink-faint);line-height:1.6}
+.chain b{color:var(--ink)}
+.goals{border-top:1px solid var(--rule);padding-top:.85rem}
+.goal{display:flex;justify-content:space-between;gap:.75rem;font-size:.88rem;padding:.4rem 0;border-bottom:1px solid var(--rule-soft)}
+.goal .cr{font-family:var(--mono);font-size:.62rem;color:var(--ink-faint);white-space:nowrap}
+.btn{font-size:.8rem;font-weight:500;padding:.6rem 1rem;background:var(--ink);color:var(--paper);border:1px solid var(--ink);text-decoration:none;display:inline-block;text-align:center}
+.btn:hover{background:var(--accent);border-color:var(--accent)}
+.btn.ghost{background:transparent;color:var(--ink-muted);border-color:var(--rule)}
+.btn[disabled]{opacity:.4;cursor:default}
+.empty-inspect{font-family:var(--mono);font-size:.72rem;color:var(--ink-faint);line-height:1.6}
+
+.foot{border-top:1px solid var(--rule);padding:1rem 1.5rem;font-family:var(--mono);font-size:.62rem;color:var(--ink-faint);display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+@media(prefers-reduced-motion:reduce){*{transition-duration:.001ms!important}}
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div>
+    <p class="eyebrow">StarStruck <span class="demo-flag">Interactive</span></p>
+    <h1>Engineering career map</h1>
+  </div>
+  <p class="eyebrow" style="text-align:right;max-width:22rem">Fields lead to skills, skills draw on education and open into careers. Click any node.</p>
+</header>
+
+<div class="toolbar" id="filters">
+  <span class="eyebrow">Show</span>
+  <button class="chip" data-kind="all" aria-pressed="true">All</button>
+  <button class="chip" data-kind="field" aria-pressed="false"><span class="sw" style="background:var(--k-field)"></span>Fields</button>
+  <button class="chip" data-kind="skill" aria-pressed="false"><span class="sw" style="background:var(--k-skill)"></span>Skills</button>
+  <button class="chip" data-kind="education" aria-pressed="false"><span class="sw" style="background:var(--k-education)"></span>Education</button>
+  <button class="chip" data-kind="role" aria-pressed="false"><span class="sw" style="background:var(--k-role)"></span>Careers</button>
+</div>
+
+<div class="stage">
+  <div class="canvas">
+    <svg id="graph" role="img" aria-label="Career map graph"></svg>
+    <div class="hint">Drag to reposition · scroll to zoom · click a node to inspect</div>
+  </div>
+  <aside class="inspect" id="inspect">
+    <p class="empty-inspect">Select a node to see what it is, where it sits in the
+    chain, and — for a skill or career — the concrete goals you could carry into
+    the Waypoint progress tracker.</p>
+  </aside>
+</div>
+
+<footer class="foot">
+  <span>StarStruck · interactive demo · data is a JSON graph, editable in one file</span>
+  <span>Rebuilt from a v0 export — d3 force layout, no build step</span>
+</footer>
+
+<script src="data.js"></script>
+<script>
+/* Minimal force-directed layout — no external library, so the map has zero
+   network dependencies and can't render blank behind a CDN block. Implements
+   the three forces that matter for a small graph: link springs, node repulsion,
+   and centering, plus drag and zoom/pan. */
+(function () {
+  "use strict";
+  var DATA = window.MAP_DATA;
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var KIND_COLOR = { field:"var(--k-field)", skill:"var(--k-skill)", education:"var(--k-education)", role:"var(--k-role)" };
+  var KIND_R = { field:11, skill:8, education:6, role:9 };
+
+  var byId = {}; DATA.nodes.forEach(function (n){ byId[n.id]=n; });
+  var adj={}, incoming={}, outgoing={};
+  DATA.nodes.forEach(function(n){ adj[n.id]=[]; incoming[n.id]=[]; outgoing[n.id]=[]; });
+  DATA.links.forEach(function(l){
+    adj[l.source].push(l.target); adj[l.target].push(l.source);
+    outgoing[l.source].push(l.target); incoming[l.target].push(l.source);
+  });
+
+  var svg = document.getElementById("graph");
+  var box = svg.getBoundingClientRect();
+  var W = box.width || 800, H = Math.max(640, box.height || 640);
+
+  // ── Layout state ────────────────────────────────────────────────────────
+  var nodes = DATA.nodes.map(function (n, i) {
+    var a = (i / DATA.nodes.length) * Math.PI * 2;
+    return { d:n, x: W/2 + Math.cos(a)*180 + (Math.random()-.5)*40,
+                   y: H/2 + Math.sin(a)*180 + (Math.random()-.5)*40, vx:0, vy:0, fx:null, fy:null };
+  });
+  var pos = {}; nodes.forEach(function (p){ pos[p.d.id]=p; });
+  var links = DATA.links.map(function (l){ return { s:pos[l.source], t:pos[l.target], sid:l.source, tid:l.target }; });
+
+  // ── SVG scaffold ─────────────────────────────────────────────────────────
+  var root = el("g"); svg.appendChild(root);
+  var gLinks = el("g"); root.appendChild(gLinks);
+  var gNodes = el("g"); root.appendChild(gNodes);
+
+  var linkEls = links.map(function (l){
+    var ln = el("line"); ln.setAttribute("class","link"); gLinks.appendChild(ln); l.el=ln; return l;
+  });
+
+  var nodeEls = nodes.map(function (p){
+    var g = el("g"); g.setAttribute("class","node");
+    var c = el("circle"); c.setAttribute("class","node-dot");
+    c.setAttribute("r", KIND_R[p.d.kind]); c.setAttribute("fill", KIND_COLOR[p.d.kind]);
+    var t = el("text"); t.setAttribute("class","node-label");
+    t.setAttribute("x", KIND_R[p.d.kind]+4); t.setAttribute("dy","0.32em");
+    t.textContent = p.d.label;
+    g.appendChild(c); g.appendChild(t); gNodes.appendChild(g);
+    p.g = g;
+    g.style.cursor = "pointer";
+    g.addEventListener("click", function(ev){ if(!p._dragged) select(p.d.id); });
+    enableDrag(p, g);
+    return p;
+  });
+
+  function el(name){ return document.createElementNS(SVGNS, name); }
+
+  // ── Simulation ───────────────────────────────────────────────────────────
+  var alpha = 1;
+  var LINK_DIST = 90, CHARGE = 2600, CENTER = 0.02, LINK_K = 0.06, MAXV = 18;
+  function step(){
+    if(alpha > 0.004){
+      alpha *= 0.99;
+      // repulsion: inverse-distance (not inverse-square) keeps forces bounded
+      for(var i=0;i<nodes.length;i++){
+        var a=nodes[i];
+        for(var j=i+1;j<nodes.length;j++){
+          var b=nodes[j], dx=a.x-b.x, dy=a.y-b.y;
+          var dist=Math.sqrt(dx*dx+dy*dy)||1;
+          if(dist>420) continue;
+          var f=CHARGE/(dist*dist);
+          var fx=(dx/dist)*f, fy=(dy/dist)*f;
+          a.vx+=fx; a.vy+=fy; b.vx-=fx; b.vy-=fy;
+        }
+      }
+      // link springs
+      links.forEach(function(l){
+        var dx=l.t.x-l.s.x, dy=l.t.y-l.s.y, dist=Math.sqrt(dx*dx+dy*dy)||1;
+        var f=(dist-LINK_DIST)*LINK_K, fx=(dx/dist)*f, fy=(dy/dist)*f;
+        l.s.vx+=fx; l.s.vy+=fy; l.t.vx-=fx; l.t.vy-=fy;
+      });
+      // centering, damping, clamp, integrate
+      nodes.forEach(function(p){
+        p.vx += (W/2 - p.x)*CENTER; p.vy += (H/2 - p.y)*CENTER;
+        p.vx*=0.82; p.vy*=0.82;
+        p.vx = Math.max(-MAXV, Math.min(MAXV, p.vx));
+        p.vy = Math.max(-MAXV, Math.min(MAXV, p.vy));
+        if(p.fx!=null){ p.x=p.fx; p.y=p.fy; }
+        else { p.x+=p.vx; p.y+=p.vy; }
+      });
+    }
+    tickDraw();
+    requestAnimationFrame(step);
+  }
+  function tickDraw(){
+    linkEls.forEach(function(l){
+      l.el.setAttribute("x1",l.s.x); l.el.setAttribute("y1",l.s.y);
+      l.el.setAttribute("x2",l.t.x); l.el.setAttribute("y2",l.t.y);
+    });
+    nodeEls.forEach(function(p){ p.g.setAttribute("transform","translate("+p.x+","+p.y+")"); });
+  }
+  requestAnimationFrame(step);
+  function reheat(){ alpha = Math.max(alpha, 0.35); }
+
+  // ── Drag ─────────────────────────────────────────────────────────────────
+  function enableDrag(p, g){
+    var down=false, moved=false, start;
+    g.addEventListener("pointerdown", function(ev){
+      down=true; moved=false; p._dragged=false; start=svgPoint(ev);
+      g.setPointerCapture(ev.pointerId); reheat(); ev.stopPropagation();
+    });
+    g.addEventListener("pointermove", function(ev){
+      if(!down) return;
+      var pt=svgPoint(ev);
+      if(Math.abs(pt.x-start.x)+Math.abs(pt.y-start.y) > 3){ moved=true; p._dragged=true; }
+      p.fx=pt.x; p.fy=pt.y; reheat();
+    });
+    g.addEventListener("pointerup", function(ev){
+      down=false; p.fx=null; p.fy=null;
+      setTimeout(function(){ p._dragged=false; }, 0);
+    });
+  }
+
+  // ── Zoom / pan ─────────────────────────────────────────────────────────
+  var view={k:1,x:0,y:0};
+  function apply(){ root.setAttribute("transform","translate("+view.x+","+view.y+") scale("+view.k+")"); }
+  svg.addEventListener("wheel", function(ev){
+    ev.preventDefault();
+    var pt=svgPoint(ev), k=Math.min(3, Math.max(0.4, view.k * (ev.deltaY<0?1.1:0.9)));
+    view.x = pt.x - (pt.x - view.x) * (k/view.k);
+    view.y = pt.y - (pt.y - view.y) * (k/view.k);
+    view.k = k; apply();
+  }, {passive:false});
+  (function panBg(){
+    var down=false, s;
+    svg.addEventListener("pointerdown", function(ev){ if(ev.target===svg){ down=true; s={x:ev.clientX-view.x,y:ev.clientY-view.y}; } });
+    window.addEventListener("pointermove", function(ev){ if(down){ view.x=ev.clientX-s.x; view.y=ev.clientY-s.y; apply(); } });
+    window.addEventListener("pointerup", function(){ down=false; });
+  })();
+  function svgPoint(ev){
+    var r=svg.getBoundingClientRect();
+    return { x:(ev.clientX-r.left-view.x)/view.k, y:(ev.clientY-r.top-view.y)/view.k };
+  }
+
+  // ── Filtering ──────────────────────────────────────────────────────────
+  var activeKind = "all", selectedId = null;
+  document.getElementById("filters").addEventListener("click", function(ev){
+    var chip = ev.target.closest(".chip"); if(!chip) return;
+    activeKind = chip.dataset.kind;
+    document.querySelectorAll(".chip").forEach(function(c){
+      c.setAttribute("aria-pressed", String(c.dataset.kind===activeKind));
+    });
+    applyView(selectedId);
+  });
+
+  function select(id){ selectedId = id; applyView(id); renderInspect(byId[id]); }
+
+  function applyView(focusId){
+    var neigh = null;
+    if(focusId){ neigh=Object.create(null); neigh[focusId]=true; adj[focusId].forEach(function(n){ neigh[n]=true; }); }
+    nodeEls.forEach(function(p){
+      var d=p.d;
+      var visibleKind = (activeKind==="all" || d.kind===activeKind);
+      var inFocus = !neigh || neigh[d.id];
+      var cls = "node";
+      if(d.id===focusId) cls += " focus";
+      if(!(visibleKind && inFocus)) cls += " dim";
+      p.g.setAttribute("class", cls);
+    });
+    linkEls.forEach(function(l){
+      var kindOk = activeKind==="all" || byId[l.sid].kind===activeKind || byId[l.tid].kind===activeKind;
+      var focusOk = !neigh || (neigh[l.sid] && neigh[l.tid]);
+      l.el.style.opacity = (kindOk && focusOk) ? 0.7 : 0.08;
+    });
+  }
+
+  // ── Inspector ────────────────────────────────────────────────────────────
+  function chainFor(node){
+    // Walk outgoing/incoming to describe where the node sits: field › skill › role
+    var parts = [];
+    if(node.kind==="skill"){
+      var f = incoming[node.id].map(function(i){return byId[i];}).filter(function(n){return n.kind==="field";})[0];
+      var roles = outgoing[node.id].map(function(o){return byId[o];}).filter(function(n){return n.kind==="role";});
+      if(f) parts.push("<b>"+f.label+"</b>");
+      parts.push("<b>"+node.label+"</b>");
+      if(roles.length) parts.push(roles.map(function(r){return r.label;}).join(" / "));
+    } else if(node.kind==="role"){
+      var skills = incoming[node.id].map(function(i){return byId[i];}).filter(function(n){return n.kind==="skill";});
+      parts.push(skills.map(function(s){return s.label;}).join(" / ") || "skills");
+      parts.push("<b>"+node.label+"</b>");
+    } else if(node.kind==="field"){
+      var sk = outgoing[node.id].map(function(o){return byId[o];}).filter(function(n){return n.kind==="skill";});
+      parts.push("<b>"+node.label+"</b>");
+      parts.push(sk.map(function(s){return s.label;}).join(" / "));
+    } else {
+      var grounds = incoming[node.id].map(function(i){return byId[i];}).filter(function(n){return n.kind==="skill";});
+      parts.push("grounds " + (grounds.map(function(s){return s.label;}).join(" / ")||"skills"));
+    }
+    return parts.join(" &rsaquo; ");
+  }
+
+  function collectGoals(node){
+    // A skill contributes its own goals; a role gathers goals from the skills
+    // that lead into it. This is the payload the handoff sends to Waypoint.
+    if(node.kind==="skill") return (node.goals||[]).map(function(g){return {skill:node.label, title:g.title, credits:g.credits};});
+    if(node.kind==="role"){
+      var out=[];
+      incoming[node.id].forEach(function(i){
+        var s=byId[i];
+        if(s.kind==="skill" && s.goals) s.goals.forEach(function(g){ out.push({skill:s.label,title:g.title,credits:g.credits}); });
+      });
+      return out;
+    }
+    return [];
+  }
+
+  function renderInspect(node){
+    var el = document.getElementById("inspect");
+    var color = KIND_COLOR[node.kind];
+    var goals = collectGoals(node);
+
+    var html = ''
+      + '<span class="kind" style="color:'+color+'">'+node.kind+'</span>'
+      + '<h2>'+esc(node.label)+'</h2>'
+      + '<p class="sum">'+esc(node.summary)+'</p>'
+      + '<p class="chain">'+chainFor(node)+'</p>';
+
+    if(node.kind==="role" && node.demand){
+      html += '<p class="eyebrow">Demand · '+esc(node.demand)+'</p>';
+    }
+
+    if(goals.length){
+      html += '<div class="goals"><p class="eyebrow" style="margin-bottom:.5rem">'
+            + (node.kind==="role" ? "Skills this career wants — as goals" : "Goals for this skill")
+            + '</p>';
+      goals.forEach(function(g){
+        html += '<div class="goal"><span>'+esc(g.title)+'</span><span class="cr">'+g.credits+' cr</span></div>';
+      });
+      var qs = encodeURIComponent(JSON.stringify({ source:node.label, goals:goals }));
+      html += '<a class="btn" style="margin-top:.9rem" href="../waypoint/?goals='+qs+'" target="_top">'
+            + 'Send '+goals.length+' goal'+(goals.length>1?'s':'')+' to Waypoint →</a>';
+      html += '<p class="chain" style="margin-top:.5rem">Opens the mentorship tracker with these loaded as milestones.</p>';
+      html += '</div>';
+    } else {
+      html += '<p class="chain">Explore a connected <b>skill</b> or <b>career</b> to pull concrete goals into the progress tracker.</p>';
+    }
+
+    el.innerHTML = html;
+  }
+
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  // Deep-link support: ?focus=<id>
+  var focus = new URLSearchParams(location.search).get("focus");
+  if(focus && byId[focus]) setTimeout(function(){ select(focus); }, 400);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Project Portfolio — {{ site.name }}{% endblock %}
+{% block description %}A structured index of applied analytics, data science, software, and security work — professional projects and independent builds.{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Portfolio</p>
+  <h1>Selected work</h1>
+  <p class="lede">Two kinds of work, in one place. Professional projects done at enterprise scale inside American Airlines. Independent builds done outside it — systems I designed and shipped myself, with demos and case studies.</p>
+</section>
+
+<!-- ── Professional applied work ──────────────────────────────────────── -->
+<section class="port-section">
+  <div class="port-section-head">
+    <div>
+      <p class="eyebrow">Applied work · American Airlines Cargo</p>
+      <h2 class="section-title">Professional projects</h2>
+    </div>
+    <p class="port-note">Enterprise-scale work on internal systems and data. Source and output are confidential; what's shown here is the problem, the approach, and the result.</p>
+  </div>
+
+  <div class="port-grid">
+    {% for p in site.professional_projects %}
+    <article class="port-card pro">
+      <header class="port-card-head">
+        <span class="port-cat">{{ p.category }}</span>
+        <span class="port-status port-status--active">{{ p.status }}</span>
+      </header>
+      <h3>{{ p.title }}</h3>
+      <div class="port-body">
+        <div class="port-row">
+          <span class="port-label">Context</span>
+          <p>{{ p.context }}</p>
+        </div>
+        <div class="port-row">
+          <span class="port-label">Approach</span>
+          <p>{{ p.approach }}</p>
+        </div>
+        <div class="port-row">
+          <span class="port-label">Tools</span>
+          <p class="port-tools">{{ p.tools | commas }}</p>
+        </div>
+        <div class="port-row port-row--outcome">
+          <span class="port-label">Outcome</span>
+          <p>{{ p.outcome }}</p>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ── Independent builds ─────────────────────────────────────────────── -->
+<section class="port-section">
+  <div class="port-section-head">
+    <div>
+      <p class="eyebrow">Independent builds</p>
+      <h2 class="section-title">Portfolio projects</h2>
+    </div>
+    <p class="port-note">Projects I designed and built outside of work. Most have a live demo or interactive case study.</p>
+  </div>
+
+  <div class="port-grid wide">
+    {% for p in projects %}
+    <article class="port-card indep" data-track="{{ p.track }}">
+      <header class="port-card-head">
+        <span class="port-cat">{{ p.track_label }}</span>
+        <span class="port-status {% if p.status == 'archived' %}port-status--arch{% elif p.status == 'active' %}port-status--active{% endif %}">
+          {% if p.status == 'archived' %}Archived{% elif p.status == 'active' %}Active{% else %}{{ p.status }}{% endif %}
+        </span>
+      </header>
+      <h3>{{ p.title }}</h3>
+      <p class="port-summary">{{ p.summary }}</p>
+      <div class="port-tools-line">{{ p.stack | commas }}</div>
+      <div class="port-links">
+        <a class="port-link primary" href="{{ p.url }}">Case study →</a>
+        {% if p.demo %}<a class="port-link" href="{{ p.demo }}" target="_blank">Demo</a>{% endif %}
+        {% if p.repo %}<a class="port-link" href="{{ p.repo }}" target="_blank">Source</a>{% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ── Core toolkit ───────────────────────────────────────────────────── -->
+<section class="port-toolkit">
+  <h2 class="section-title">Core toolkit</h2>
+  <div class="cap-grid" style="margin-top:1.5rem">
+    {% for group in site.capabilities %}
+    <div class="cap">
+      <p class="eyebrow">{{ group.group }}</p>
+      <p class="cap-items">{{ group['items'] | commas }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="cap-certs">
+    <span class="eyebrow">Certified</span>
+    {{ site.certifications | commas }}
+  </p>
+</section>
+{% endblock %}

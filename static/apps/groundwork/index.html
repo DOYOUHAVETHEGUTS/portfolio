@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Groundwork — capital request intake (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F1F1EE;--paper-lift:#FBFBF9;--ink:#15191D;--ink-muted:#5C6169;
+  --ink-faint:#8A8F96;--rule:#D7D6CF;--rule-soft:#E4E3DD;
+  --accent:#0E6B5E;--accent-dim:#0E6B5E1A;--signal:#A9660F;--panel:#232A31;
+  --fail:#B4442E;--ok:#0E6B5E;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"Newsreader",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--display);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:940px;margin:0 auto;padding:clamp(1.25rem,4vw,2.5rem)}
+.eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-faint);margin:0}
+.demo-flag{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--signal);border:1px solid currentColor;padding:.2rem .45rem;margin-left:.5rem}
+h1{font-family:var(--display);font-size:clamp(1.3rem,3vw,1.7rem);font-weight:600;margin:.3rem 0 .4rem}
+.sub{color:var(--ink-muted);font-size:.92rem;margin:0 0 1.25rem;max-width:66ch}
+.rule{border:0;border-top:1.5px solid var(--accent);margin:0 0 1.25rem}
+
+/* step rail */
+.rail{display:flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden;
+  background:var(--paper-lift);margin-bottom:1.25rem;flex-wrap:wrap}
+.rail span{font-family:var(--mono);font-size:.68rem;padding:.45rem .8rem;color:var(--ink-faint);
+  border-right:1px solid var(--rule)}
+.rail span:last-child{border-right:0}
+.rail span.on{background:var(--ink);color:var(--paper-lift)}
+
+/* draft picker */
+.drafts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.6rem;margin-bottom:1.25rem}
+.draft{text-align:left;border:1px solid var(--rule);border-radius:8px;background:var(--paper-lift);
+  padding:.7rem .85rem;cursor:pointer;font:inherit;color:inherit}
+.draft:hover{border-color:var(--ink-faint)}
+.draft.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.draft .nm{font-weight:600;font-size:.9rem;line-height:1.3}
+.draft .dsc{font-family:var(--mono);font-size:.64rem;color:var(--ink-faint);margin-top:.25rem}
+.draft:focus-visible,.btn:focus-visible,.sec:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* score header */
+.scorebar{display:flex;align-items:center;gap:1.1rem;flex-wrap:wrap;
+  background:var(--panel);color:#E9E7E0;border-radius:10px;padding:1rem 1.1rem;margin-bottom:1rem}
+.bignum{font-family:var(--mono);font-size:2.1rem;font-weight:600;line-height:1}
+.bignum small{font-size:.9rem;color:#9AA2AA;font-weight:400}
+.status{font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
+  padding:.25rem .6rem;border-radius:999px}
+.status.blocked{background:#B4442E;color:#fff}
+.status.need{background:#A9660F;color:#fff}
+.status.ready{background:#1C7A5E;color:#fff}
+.scoremsg{font-size:.86rem;color:#C7CDD3;flex:1 1 260px;min-width:220px}
+.delta{font-family:var(--mono);font-size:.78rem;color:#7FD1B9}
+
+/* gates */
+.gates{border:1px solid var(--rule);border-radius:8px;background:var(--paper-lift);padding:.85rem 1rem;margin-bottom:1rem}
+.gates h3{font-size:.8rem;margin:0 0 .1rem}
+.gates .note{font-family:var(--mono);font-size:.64rem;color:var(--ink-faint);margin:0 0 .6rem}
+.gate{display:flex;gap:.6rem;align-items:flex-start;padding:.45rem 0;border-top:1px solid var(--rule-soft);font-size:.87rem}
+.gate:first-of-type{border-top:0}
+.gate .mark{font-family:var(--mono);font-size:.78rem;font-weight:600;min-width:1.2rem}
+.gate.pass .mark{color:var(--ok)}
+.gate.fail .mark{color:var(--fail)}
+.gate .lbl{font-weight:600;min-width:120px}
+.gate .msg{color:var(--ink-muted);flex:1}
+
+/* section cards */
+.sec{width:100%;text-align:left;border:1px solid var(--rule-soft);border-radius:8px;
+  background:var(--paper-lift);padding:.7rem .9rem;margin-bottom:.5rem;cursor:pointer;font:inherit;color:inherit}
+.sec-top{display:flex;align-items:center;gap:.7rem}
+.sec-nm{font-weight:600;font-size:.92rem;flex:1}
+.sec-pts{font-family:var(--mono);font-size:.82rem;white-space:nowrap}
+.sec-pts b{font-size:.95rem}
+.bar{height:5px;background:var(--rule-soft);border-radius:3px;margin-top:.45rem;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .4s ease}
+.bar i.low{background:var(--signal)}
+.bar i.bad{background:var(--fail)}
+.caret{font-family:var(--mono);font-size:.7rem;color:var(--ink-faint)}
+.findings{margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--rule-soft);display:none}
+.sec.open .findings{display:block}
+.finding{margin-bottom:.7rem}
+.finding:last-child{margin-bottom:0}
+.finding .w{font-weight:600;font-size:.86rem}
+.finding .why{font-size:.84rem;color:var(--ink-muted);margin:.15rem 0}
+.finding .ev{font-family:var(--mono);font-size:.72rem;color:var(--ink-faint);
+  border-left:2px solid var(--rule);padding-left:.55rem;margin:.25rem 0}
+.finding .fix{font-size:.84rem;color:var(--ink)}
+.finding .fix b{color:var(--accent)}
+.cap{font-family:var(--mono);font-size:.66rem;color:var(--fail);margin-top:.35rem}
+
+/* guided round */
+.guided{border:1px solid var(--rule);border-radius:8px;background:var(--paper-lift);
+  padding:.9rem 1rem;margin-top:1.1rem}
+.guided h3{font-size:.85rem;margin:0 0 .15rem}
+.guided .note{font-family:var(--mono);font-size:.64rem;color:var(--ink-faint);margin:0 0 .7rem}
+.q{border-top:1px solid var(--rule-soft);padding:.6rem 0}
+.q:first-of-type{border-top:0}
+.q p{margin:0 0 .4rem;font-size:.88rem}
+.q .tag{font-family:var(--mono);font-size:.62rem;color:var(--signal);letter-spacing:.05em;
+  text-transform:uppercase;display:block;margin-bottom:.2rem}
+.btn{font-family:var(--display);font-size:.8rem;padding:.4rem .8rem;border-radius:6px;
+  border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.answered{font-family:var(--mono);font-size:.72rem;color:var(--ok)}
+.note-box{font-family:var(--mono);font-size:.62rem;color:var(--ink-faint);
+  background:var(--accent-dim);padding:.6rem .75rem;border-radius:4px;margin-top:1.5rem;line-height:1.65}
+.draft .nm,.draft .dsc{display:block}
+.sec-top{display:flex}
+.sec .bar,.sec .cap,.sec .findings{display:block}
+.sec.open .findings{display:block}
+.finding{display:block}
+.finding .w,.finding .why,.finding .ev,.finding .fix{display:block}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Groundwork <span class="demo-flag">Interactive demo</span></p>
+  <h1>Capital request intake &amp; scoring</h1>
+  <p class="sub">Pick a draft request, see how it scores the way Finance reads it, open any
+  section to read the findings, then answer the guided questions and watch the score move.
+  The required items at the top override the score entirely — a request can't hand off while
+  any of them is open.</p>
+  <hr class="rule">
+
+  <nav class="rail" aria-label="Workflow">
+    <span>1 Describe</span><span>2 Review</span><span class="on">3 Score</span>
+    <span id="rail-improve">4 Improve</span><span id="rail-handoff">5 Handoff</span>
+  </nav>
+
+  <div class="drafts" id="drafts" role="group" aria-label="Sample drafts"></div>
+
+  <div class="scorebar">
+    <div><div class="bignum" id="score">0<small>/100</small></div></div>
+    <span class="status" id="status">—</span>
+    <p class="scoremsg" id="scoremsg"></p>
+    <span class="delta" id="delta"></span>
+  </div>
+
+  <div class="gates">
+    <h3>Required items</h3>
+    <p class="note">Decided by rules, never by the model. These override the score.</p>
+    <div id="gates"></div>
+  </div>
+
+  <div id="sections"></div>
+
+  <div class="guided" id="guided">
+    <h3>Guided round — 10 questions, aimed where the points are</h3>
+    <p class="note">The real tool asks ten; three are shown here. Answers are written into the draft, then it re-scores.</p>
+    <div id="questions"></div>
+  </div>
+
+  <p class="note-box">Demo of the scoring model and guided round. Sample requests are generic
+  industrial capital items written for this demo — no real request, vendor, pricing or
+  internal data appears here. The full tool also drafts from speech, imports existing Word
+  drafts, builds the itemized quote and process-flow exhibits, and exports the handoff.</p>
+
+  <p class="sr" role="status" aria-live="polite" id="live"></p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var WEIGHTS = [
+    ["Current Situation", 25],
+    ["Proposal", 15],
+    ["Cost", 20],
+    ["Justification", 20],
+    ["Alternatives", 20]
+  ];
+
+  var DRAFTS = [
+    {
+      id: "weak",
+      name: "Shop tooling replacement",
+      desc: "first draft · 4 asks bundled · no quotes",
+      quotes: 0,
+      creDeclared: false,
+      creDriven: false,
+      base: { "Current Situation": 9, "Proposal": 4, "Cost": 5, "Justification": 6, "Alternatives": 4 },
+      caps: { "Proposal": "Capped at 4 — four unrelated asks bundled under one title." },
+      findings: {
+        "Current Situation": [
+          { w: "No measured baseline.", why: "Finance can't size a problem it can't count. Without a number, every benefit claimed later is unanchored.",
+            ev: "\"the current tooling is aging and causes delays\"",
+            fix: "Give the count, age and failure rate: how many units, how old, how many failures or hours lost per month." },
+          { w: "No visuals.", why: "A photo and a simple process flow show where time is actually lost faster than a paragraph does.",
+            ev: "no exhibits attached", fix: "Attach a photo of the condition and a process flow with the bottleneck marked." }
+        ],
+        "Proposal": [
+          { w: "Four unrelated asks under one title.", why: "A bundled request can't be approved or declined cleanly — and the title doesn't match what's inside.",
+            ev: "title names one item; body requests four", fix: "Split into separate requests, or retitle to the single ask this one is really about." }
+        ],
+        "Cost": [
+          { w: "One lump-sum total.", why: "A single number can't be checked, compared or negotiated. Finance needs to see what makes it up.",
+            ev: "\"total project cost: one lump sum\"", fix: "Build it up as quantity × unit cost per line, add contingency, and name the funding source." }
+        ],
+        "Justification": [
+          { w: "No explicit recommendation.", why: "If the request never says what it recommends, the committee has to infer it — and inference is where approvals stall.",
+            ev: "no recommendation sentence found", fix: "State plainly: \"We recommend ___ because ___.\"" },
+          { w: "Benefit isn't quantified.", why: "A benefit that isn't tied back to the baseline number can't be verified after the spend.",
+            ev: "\"will improve efficiency\"", fix: "Tie the benefit to the baseline: hours recovered, failures avoided, capacity gained." }
+        ],
+        "Alternatives": [
+          { w: "Alternatives are consequences, not options.", why: "\"Do nothing and it gets worse\" isn't an alternative — it's an argument for the proposal.",
+            ev: "\"the alternative is continued downtime\"", fix: "Give two real options — repair, lease, phase, a different vendor — compared on one basis." }
+        ]
+      }
+    },
+    {
+      id: "refined",
+      name: "Material handling stands",
+      desc: "revised · 1 sole-source quote · no justification",
+      quotes: 1,
+      creDeclared: true,
+      creDriven: false,
+      base: { "Current Situation": 19, "Proposal": 12, "Cost": 13, "Justification": 11, "Alternatives": 8 },
+      caps: {},
+      findings: {
+        "Current Situation": [
+          { w: "Baseline is partly measured.", why: "Counts are there, but the failure rate that drives the urgency isn't.",
+            ev: "\"18 stands in service, most past their rated life\"", fix: "Add how often they fail and what that costs in hours or delayed work." }
+        ],
+        "Proposal": [
+          { w: "Timeline missing.", why: "Without timing and constraints, Finance can't place the spend in a plan year or sequence it.",
+            ev: "no dates or lead-time constraints stated", fix: "State the install window, lead time and any constraint driving the date." }
+        ],
+        "Cost": [
+          { w: "Single sole-source quote.", why: "One quote can't show the price is competitive, so the cost build-up can't be tested.",
+            ev: "one vendor quote on file", fix: "Obtain two more itemized quotes, or document the sole-source justification for an exception." }
+        ],
+        "Justification": [
+          { w: "No Justification section.", why: "This is the section the committee reads to decide. Without it the request is a quote, not a case.",
+            ev: "section absent from the draft", fix: "Add the recommendation, the quantified benefit tied to the baseline, and the risks." }
+        ],
+        "Alternatives": [
+          { w: "Options aren't compared on one basis.", why: "Two options priced differently — one all-in, one equipment-only — can't be read side by side.",
+            ev: "\"refurbishment was considered\"", fix: "Compare every option on the same basis: all-in cost, lead time and scope." }
+        ]
+      }
+    },
+    {
+      id: "exemplary",
+      name: "Facility electrical upgrade",
+      desc: "strong draft · 3 quotes · facility-driven",
+      quotes: 3,
+      creDeclared: true,
+      creDriven: true,
+      creTemplate: false,
+      base: { "Current Situation": 23, "Proposal": 14, "Cost": 15, "Justification": 16, "Alternatives": 16 },
+      caps: {},
+      findings: {
+        "Cost": [
+          { w: "Quotes aren't itemized per vendor.", why: "Three totals can't be compared line by line, so the difference between them can't be explained.",
+            ev: "three vendor totals, no line items", fix: "Break each quote into quantity × unit cost lines so the three can be read against each other." }
+        ],
+        "Justification": [
+          { w: "Benefit stated but not quantified.", why: "A benefit without a number can't be checked against the baseline after the work is done.",
+            ev: "\"removes the capacity constraint\"", fix: "Quantify it: how much capacity, measured against the baseline figure given earlier." }
+        ],
+        "Alternatives": [
+          { w: "Vendor choice not explained.", why: "Once three quotes exist, Finance needs to know which vendor is selected and why — it isn't always the cheapest.",
+            ev: "no selected-vendor rationale", fix: "Name the selected vendor and give the all-in reason: price, lead time, scope or capability." }
+        ]
+      }
+    }
+  ];
+
+  // Guided questions per draft: each answered question adds points and clears a finding.
+  var QUESTIONS = {
+    weak: [
+      { tag: "Current Situation · 10 pts at stake", q: "How many units are in service, how old are they, and how many failures or lost hours did they cause last quarter?",
+        add: { "Current Situation": 10 }, clears: ["Current Situation", 0] },
+      { tag: "Proposal · capped", q: "This request bundles four asks. Which single ask is this request for?",
+        add: { "Proposal": 8 }, clears: ["Proposal", 0], liftCap: "Proposal" },
+      { tag: "Justification · 7 pts at stake", q: "What do you recommend, and what measurable benefit does it produce against the baseline you just gave?",
+        add: { "Justification": 9 }, clears: ["Justification", 0] }
+    ],
+    refined: [
+      { tag: "Required item", q: "Three vendor quotes are required. Can you obtain two more, or is there a documented sole-source justification?",
+        add: { "Cost": 5 }, clears: ["Cost", 0], setQuotes: 3 },
+      { tag: "Justification · 20 pts at stake", q: "What is the recommendation, the quantified benefit, and the risks or assumptions behind it?",
+        add: { "Justification": 8 }, clears: ["Justification", 0] },
+      { tag: "Alternatives · 6 pts at stake", q: "Put every option on one basis — what is the all-in cost, lead time and scope of each?",
+        add: { "Alternatives": 6 }, clears: ["Alternatives", 0] }
+    ],
+    exemplary: [
+      { tag: "Required item", q: "This request is facility-driven. Has the corporate real estate template been requested?",
+        add: {}, clears: null, setTemplate: true },
+      { tag: "Cost · 4 pts at stake", q: "Can each vendor quote be broken into quantity × unit cost lines?",
+        add: { "Cost": 4 }, clears: ["Cost", 0] },
+      { tag: "Alternatives · 5 pts at stake", q: "Which vendor is selected, and what is the all-in reason it was chosen over the other two?",
+        add: { "Alternatives": 4 }, clears: ["Alternatives", 0] }
+    ]
+  };
+
+  var PASS = 75;
+  var state = null;
+
+  function load(id) {
+    var d = DRAFTS.filter(function (x) { return x.id === id; })[0];
+    state = {
+      id: id,
+      draft: d,
+      pts: JSON.parse(JSON.stringify(d.base)),
+      quotes: d.quotes,
+      creTemplate: !!d.creTemplate,
+      cleared: {},
+      answered: {},
+      capsLifted: {},
+      prev: null
+    };
+    renderAll();
+  }
+
+  function total() {
+    return WEIGHTS.reduce(function (s, w) { return s + state.pts[w[0]]; }, 0);
+  }
+
+  function gates() {
+    var d = state.draft, out = [];
+    out.push({
+      id: "quotes",
+      label: "Three vendor quotes",
+      pass: state.quotes >= 3,
+      msg: state.quotes >= 3
+        ? "Three quotes on file."
+        : "Automatic fail — " + state.quotes + " on file. Fewer than three fails the request regardless of score."
+    });
+    out.push({
+      id: "cre",
+      label: "Facility status",
+      pass: d.creDeclared,
+      msg: d.creDeclared ? "Declared." : "Every request must declare whether it is facility-driven."
+    });
+    if (d.creDriven) {
+      out.push({
+        id: "tmpl",
+        label: "Facility template",
+        pass: state.creTemplate,
+        msg: state.creTemplate
+          ? "Recorded as requested."
+          : "Facility-driven requests are blocked until the template is recorded as requested."
+      });
+    }
+    return out;
+  }
+
+  function renderDrafts() {
+    document.getElementById("drafts").innerHTML = DRAFTS.map(function (d) {
+      return '<button type="button" class="draft' + (d.id === state.id ? " on" : "") + '" data-d="' + d.id + '">' +
+        '<span class="nm">' + d.name + '</span>' +
+        '<span class="dsc">' + d.desc + '</span></button>';
+    }).join("");
+  }
+
+  function renderScore() {
+    var t = total(), g = gates();
+    var blocked = g.some(function (x) { return !x.pass; });
+    var el = document.getElementById("score");
+    el.innerHTML = t + '<small>/100</small>';
+
+    var st = document.getElementById("status"), msg = document.getElementById("scoremsg");
+    if (blocked) {
+      st.className = "status blocked"; st.textContent = "Blocked";
+      msg.textContent = "This can't go to Finance yet. The required items above fail the request regardless of score.";
+    } else if (t >= PASS) {
+      st.className = "status ready"; st.textContent = "Ready";
+      msg.textContent = "Clears the bar of " + PASS + " with every required item met. Ready to hand off.";
+    } else {
+      st.className = "status need"; st.textContent = "Needs work";
+      msg.textContent = "Below the bar of " + PASS + ". The guided round below targets the sections losing the most points.";
+    }
+
+    var d = document.getElementById("delta");
+    d.textContent = (state.prev !== null && t !== state.prev) ? ("+" + (t - state.prev) + " this round") : "";
+
+    document.getElementById("rail-improve").className = Object.keys(state.answered).length ? "on" : "";
+    document.getElementById("rail-handoff").className = (!blocked && t >= PASS) ? "on" : "";
+  }
+
+  function renderGates() {
+    document.getElementById("gates").innerHTML = gates().map(function (g) {
+      return '<div class="gate ' + (g.pass ? "pass" : "fail") + '">' +
+        '<span class="mark">' + (g.pass ? "✓" : "✕") + '</span>' +
+        '<span class="lbl">' + g.label + '</span>' +
+        '<span class="msg">' + g.msg + '</span></div>';
+    }).join("");
+  }
+
+  function renderSections() {
+    document.getElementById("sections").innerHTML = WEIGHTS.map(function (w) {
+      var name = w[0], max = w[1], got = state.pts[name];
+      var pct = Math.round((got / max) * 100);
+      var cls = pct >= 80 ? "" : (pct >= 50 ? "low" : "bad");
+      var fs = (state.draft.findings[name] || []).filter(function (f, i) {
+        return !(state.cleared[name] || []).includes(i);
+      });
+      var cap = state.draft.caps[name] && !state.capsLifted[name] ? state.draft.caps[name] : null;
+      return '<button type="button" class="sec" data-s="' + name + '">' +
+        '<span class="sec-top">' +
+          '<span class="sec-nm">' + name + '</span>' +
+          '<span class="sec-pts"><b>' + got + '</b> / ' + max + '</span>' +
+          '<span class="caret">' + (fs.length ? fs.length + " finding" + (fs.length > 1 ? "s" : "") + " ▾" : "clear") + '</span>' +
+        '</span>' +
+        '<span class="bar"><i class="' + cls + '" style="width:' + pct + '%"></i></span>' +
+        (cap ? '<span class="cap">⚠ ' + cap + '</span>' : '') +
+        '<span class="findings">' + (fs.length ? fs.map(function (f) {
+          return '<span class="finding">' +
+            '<span class="w">' + f.w + '</span>' +
+            '<span class="why">' + f.why + '</span>' +
+            '<span class="ev">' + f.ev + '</span>' +
+            '<span class="fix"><b>Fix:</b> ' + f.fix + '</span></span>';
+        }).join("") : '<span class="why">No findings left in this section.</span>') + '</span>' +
+        '</button>';
+    }).join("");
+  }
+
+  function renderQuestions() {
+    var qs = QUESTIONS[state.id] || [];
+    document.getElementById("questions").innerHTML = qs.map(function (q, i) {
+      var done = state.answered[i];
+      return '<div class="q"><span class="tag">' + q.tag + '</span>' +
+        '<p>' + q.q + '</p>' +
+        (done
+          ? '<span class="answered">✓ Answered — written into the draft and re-scored.</span>'
+          : '<button type="button" class="btn" data-q="' + i + '">Answer &amp; re-score</button>') +
+        '</div>';
+    }).join("");
+  }
+
+  function renderAll() { renderDrafts(); renderScore(); renderGates(); renderSections(); renderQuestions(); }
+
+  document.getElementById("drafts").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-d]");
+    if (b) load(b.dataset.d);
+  });
+
+  document.getElementById("sections").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-s]");
+    if (b) b.classList.toggle("open");
+  });
+
+  document.getElementById("questions").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-q]");
+    if (!b) return;
+    var i = +b.dataset.q, q = QUESTIONS[state.id][i];
+    state.prev = total();
+    state.answered[i] = true;
+    Object.keys(q.add || {}).forEach(function (k) {
+      var max = WEIGHTS.filter(function (w) { return w[0] === k; })[0][1];
+      state.pts[k] = Math.min(max, state.pts[k] + q.add[k]);
+    });
+    if (q.clears) {
+      var nm = q.clears[0], idx = q.clears[1];
+      state.cleared[nm] = (state.cleared[nm] || []).concat([idx]);
+    }
+    if (q.liftCap) state.capsLifted[q.liftCap] = true;
+    if (q.setQuotes) state.quotes = q.setQuotes;
+    if (q.setTemplate) state.creTemplate = true;
+    renderAll();
+    document.getElementById("live").textContent =
+      "Answer recorded. Score is now " + total() + " out of 100.";
+  });
+
+  load("weak");
+})();
+</script>
+</body>
+</html>

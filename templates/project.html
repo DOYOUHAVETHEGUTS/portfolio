@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}{{ project.title }} — {{ site.name }}{% endblock %}
+{% block description %}{{ project.summary }}{% endblock %}
+
+{% block content %}
+<article class="case">
+
+  <header class="case-head">
+    <p class="eyebrow">
+      <a href="/projects/">Work</a> / {{ project.track_label }}
+      {% if project.status == 'archived' %}<span class="tag">Archived</span>{% endif %}
+      {% if project.status == 'active' %}<span class="tag live">In development</span>{% endif %}
+    </p>
+    <h1>{{ project.title }}</h1>
+    <p class="lede">{{ project.summary }}</p>
+  </header>
+
+  <!-- Manifest strip: the fixed metadata line every case study carries. -->
+  <dl class="manifest">
+    <div><dt>Role</dt><dd>{{ project.role or 'Sole developer' }}</dd></div>
+    <div><dt>Period</dt><dd>{{ project.period or project.year }}</dd></div>
+    <div><dt>Type</dt><dd>{{ project.type or project.track_label }}</dd></div>
+    <div class="manifest-stack"><dt>Stack</dt><dd>{{ project.stack | commas }}</dd></div>
+    {% if project.repo or project.demo %}
+    <div><dt>Links</dt><dd>
+      {% if project.repo %}<a href="{{ project.repo }}">Source</a>{% endif %}
+      {% if project.repo and project.demo %} · {% endif %}
+      {% if project.demo %}<a href="{{ project.demo }}">Demo</a>{% endif %}
+    </dd></div>
+    {% endif %}
+  </dl>
+
+  {% if project.demo %}
+  <section class="demo-panel" aria-label="Live demo">
+    <div class="demo-bar">
+      <p class="eyebrow">Live demo</p>
+      {% if project.demo_versions %}
+      <div class="filters" id="demo-version-toggle" role="group" aria-label="Demo version">
+        {% for v in project.demo_versions %}
+        <button type="button" class="chip{% if v.url == project.demo %} is-active{% endif %}"
+                data-url="{{ v.url }}" data-note="{{ v.note }}">{{ v.label }}</button>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <p class="demo-note" id="demo-note">{{ project.demo_note or 'Runs in the browser. Nothing is sent anywhere.' }}</p>
+      {% if project.demo_versions %}
+      <span class="demo-opens">
+        {% for v in project.demo_versions %}
+        <a class="button{% if not loop.first %} ghost{% endif %}" href="{{ v.url }}"
+           target="_blank" rel="noopener">Open {{ v.short or v.label }} ↗</a>
+        {% endfor %}
+      </span>
+      {% else %}
+      <a class="button" id="demo-open" href="{{ project.demo }}" target="_blank" rel="noopener">Open full screen ↗</a>
+      {% endif %}
+    </div>
+    {% if project.demo_embed %}
+    <iframe class="demo-frame" id="demo-frame" src="{{ project.demo }}" loading="lazy"
+            title="{{ project.title }} interactive demo"></iframe>
+    {% endif %}
+  </section>
+  {% if project.demo_versions %}
+  <script>
+    document.getElementById('demo-version-toggle').addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-url]');
+      if (!btn) return;
+      this.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+      var frame = document.getElementById('demo-frame');
+      if (frame) frame.src = btn.dataset.url;
+      var open = document.getElementById('demo-open');
+      if (open) open.href = btn.dataset.url;
+      if (btn.dataset.note) document.getElementById('demo-note').textContent = btn.dataset.note;
+    });
+  </script>
+  {% endif %}
+  {% endif %}
+
+  <div class="case-body">
+    <div class="prose">
+      {{ project.html | safe }}
+    </div>
+    {% if project.toc %}
+    <aside class="case-toc" aria-label="On this page">
+      <p class="eyebrow">On this page</p>
+      {{ project.toc | safe }}
+    </aside>
+    {% endif %}
+  </div>
+
+  <nav class="case-next" aria-label="More work">
+    {% set others = projects | rejectattr('slug', 'equalto', project.slug) | list %}
+    {% for other in others[:2] %}
+    <a class="card" href="{{ other.url }}">
+      <p class="eyebrow">Next · {{ other.track_label }}</p>
+      <h3>{{ other.title }}</h3>
+      <p class="card-summary">{{ other.summary }}</p>
+    </a>
+    {% endfor %}
+  </nav>
+
+</article>
+{% endblock %}

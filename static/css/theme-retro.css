@@ -1,0 +1,164 @@
+/* ==========================================================================
+   Retro-gaming theme — an overlay on site.css, loaded only for `--theme retro`
+   builds. It re-points the design tokens and adds pixel-era detailing (chunky
+   borders, hard offset shadows, a scanline-free but CRT-adjacent palette). The
+   base layout, structure, and content are untouched; this is presentation only.
+
+   Design intent: a polished portfolio that reads as retro-gaming inspired, not
+   a novelty page. Prose stays in the readable body serif; only headings,
+   metadata, and chrome take the pixel font.
+   ========================================================================== */
+
+/* Pixel display font, loaded from the same Google Fonts origin the site
+   already uses — no new third party. "Press Start 2P" is the canonical
+   arcade face; it's heavy, so it's used sparingly (headings + chrome only). */
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
+:root[data-variant="retro"],
+[data-variant="retro"] :root,
+[data-variant="retro"] {
+  /* Warm arcade-cabinet palette: near-black bezel, phosphor green + amber. */
+  --paper:      #14131F;
+  --paper-lift: #1E1B2E;
+  --ink:        #F2ECD8;
+  --ink-muted:  #B7A9D6;
+  --ink-faint:  #7E739C;
+  --rule:       #3A3358;
+  --rule-soft:  #2A2540;
+  --accent:     #46E5A0;   /* phosphor green */
+  --accent-dim: #46E5A022;
+  --signal:     #FFC24B;   /* amber */
+  --panel:      #0C0B16;
+
+  --pixel: "Press Start 2P", "JetBrains Mono", monospace;
+}
+
+/* ---- Light retro (toggle) ----
+   Retro defaults to a dark arcade cabinet; toggling light gives a bright
+   "handheld screen" variant. Keyed on the explicit light value the toggle sets,
+   so the default (no attribute) stays dark. */
+:root[data-variant="retro"][data-theme="light"],
+[data-variant="retro"][data-theme="light"] {
+  --paper:      #E8EAD6;   /* pale LCD green-grey */
+  --paper-lift: #F2F3E6;
+  --ink:        #1B2410;
+  --ink-muted:  #46543A;
+  --ink-faint:  #6E7A60;
+  --rule:       #B6BE9E;
+  --rule-soft:  #CBD2B4;
+  --accent:     #1A7A4E;   /* deep phosphor green */
+  --accent-dim: #1A7A4E1A;
+  --signal:     #B4681A;   /* amber */
+  --panel:      #2A331C;
+}
+
+/* ----- Chrome: headings, wordmark, nav in the pixel face ----- */
+[data-variant="retro"] .wordmark-text strong,
+[data-variant="retro"] .hero-statement,
+[data-variant="retro"] .section-title,
+[data-variant="retro"] .work-title,
+[data-variant="retro"] .page-head h1,
+[data-variant="retro"] .case-head h1,
+[data-variant="retro"] .prose h2 {
+  font-family: var(--pixel);
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+
+/* Press Start 2P runs large; pull display sizes down so it doesn't overflow. */
+[data-variant="retro"] .hero-statement { font-size: clamp(1.1rem, 2.6vw, 1.8rem); line-height: 1.6; }
+[data-variant="retro"] .page-head h1,
+[data-variant="retro"] .case-head h1 { font-size: clamp(1.2rem, 3vw, 1.9rem); line-height: 1.5; }
+[data-variant="retro"] .work-title { font-size: clamp(1rem, 2.2vw, 1.4rem); }
+[data-variant="retro"] .prose h2 { font-size: 1rem; }
+[data-variant="retro"] .hero-statement em { font-style: normal; color: var(--signal); }
+
+/* Wordmark mark becomes a pixel cartridge badge. */
+[data-variant="retro"] .wordmark-mark {
+  background: var(--accent);
+  color: var(--panel);
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--panel);
+  border-radius: 0;
+}
+
+/* ----- Buttons and chips: hard offset "pressable" pixel shadow ----- */
+[data-variant="retro"] .button,
+[data-variant="retro"] .chip,
+[data-variant="retro"] .port-link {
+  border-radius: 0;
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--panel);
+  font-family: var(--mono);
+  transition: transform .08s steps(2), box-shadow .08s steps(2);
+}
+[data-variant="retro"] .button:hover,
+[data-variant="retro"] .chip:hover,
+[data-variant="retro"] .port-link:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 var(--panel);
+}
+[data-variant="retro"] .button:active,
+[data-variant="retro"] .chip:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--panel);
+}
+[data-variant="retro"] .chip.is-active {
+  background: var(--accent);
+  color: var(--panel);
+  border-color: var(--ink);
+}
+
+/* ----- Cards and rows: crisp pixel edges instead of hairlines ----- */
+[data-variant="retro"] .port-card,
+[data-variant="retro"] .card,
+[data-variant="retro"] .demo-frame,
+[data-variant="retro"] .manifest {
+  border-radius: 0;
+}
+[data-variant="retro"] .board {
+  border-top: 2px solid var(--accent);
+}
+[data-variant="retro"] .board-row:hover {
+  background: var(--accent-dim);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+[data-variant="retro"] .cell-year em { color: var(--signal); }
+
+/* ----- Themed background: a subtle pixel grid, drawn with gradients so it
+   ships as zero image bytes. Sits behind everything, low contrast. ----- */
+[data-variant="retro"] body {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--rule-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rule-soft) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+}
+
+/* Keep content panels legible over the grid. */
+[data-variant="retro"] .masthead,
+[data-variant="retro"] .footer {
+  background: var(--panel);
+  border-bottom: 2px solid var(--accent);
+}
+[data-variant="retro"] .footer { border-bottom: 0; border-top: 2px solid var(--accent); }
+
+/* ----- Focus states stay obvious and on-theme ----- */
+[data-variant="retro"] :focus-visible {
+  outline: 3px solid var(--signal);
+  outline-offset: 2px;
+}
+
+/* ----- Blinking cursor accent on the hero, arcade "insert coin" feel.
+   Respects reduced-motion (animation disabled globally in site.css). ----- */
+[data-variant="retro"] .hero-statement::after {
+  content: "_";
+  color: var(--accent);
+  animation: retro-blink 1s steps(1) infinite;
+}
+@keyframes retro-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  [data-variant="retro"] .hero-statement::after { animation: none; }
+}

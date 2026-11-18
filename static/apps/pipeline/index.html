@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Data Pipeline — walkthrough (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F1F1EE;--paper-lift:#FBFBF9;--ink:#15191D;--ink-muted:#5C6169;
+  --ink-faint:#8A8F96;--rule:#D7D6CF;--rule-soft:#E4E3DD;
+  --accent:#0E6B5E;--accent-dim:#0E6B5E1A;--signal:#A9660F;--panel:#171C21;
+  --up:#0E6B5E;--down:#B4442E;
+  --summit:#1B4B8F;--summit-dim:#1B4B8F14;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"Newsreader",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--display);font-size:15px;line-height:1.5}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin:0}
+.mono{font-family:var(--mono)}
+
+.head{border-bottom:1px solid var(--ink);padding:1rem 1.5rem .85rem;display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap}
+.head h1{font-size:1.05rem;font-weight:600;letter-spacing:-.01em;margin:.2rem 0 0}
+.demo-flag{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--signal);border:1px solid currentColor;padding:.2rem .45rem;margin-left:.5rem}
+
+/* stepper */
+.steps{display:flex;gap:0;padding:.85rem 1.5rem;border-bottom:1px solid var(--rule);overflow-x:auto}
+.stepbtn{font-family:var(--mono);font-size:.62rem;letter-spacing:.05em;color:var(--ink-faint);background:none;border:0;padding:.3rem .7rem;white-space:nowrap;border-bottom:2px solid transparent;display:flex;gap:.4rem;align-items:center}
+.stepbtn .num{width:16px;height:16px;border:1px solid var(--rule);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.55rem}
+.stepbtn.active{color:var(--ink)}
+.stepbtn.active .num{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.stepbtn.done .num{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.stage{padding:1.5rem;max-width:760px;margin:0 auto;min-height:520px}
+.panel{display:none}
+.panel.active{display:block;animation:fade .35s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.simbar{font-family:var(--mono);font-size:.62rem;color:var(--signal);background:#A9660F10;border:1px solid #A9660F30;padding:.4rem .7rem;margin-bottom:1.25rem;text-align:center}
+
+/* Summit fake brokerage */
+.summit-card{border:1px solid var(--rule);background:#fff;max-width:420px;margin:0 auto}
+.summit-top{background:var(--summit);color:#fff;padding:1rem 1.25rem;display:flex;align-items:center;gap:.6rem}
+.summit-logo{width:26px;height:26px;border-radius:5px;background:#fff;color:var(--summit);display:flex;align-items:center;justify-content:center;font-weight:700}
+.summit-top b{font-size:1rem;letter-spacing:-.01em}
+.summit-top span{font-family:var(--mono);font-size:.55rem;opacity:.8;display:block}
+.summit-body{padding:1.5rem 1.25rem}
+.summit-body h2{font-size:1.1rem;margin:0 0 1rem;font-weight:600}
+.fld{margin-bottom:.85rem}
+.fld label{display:block;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:.3rem}
+.fld input{width:100%;padding:.6rem .7rem;border:1px solid var(--rule);font-size:.95rem;background:var(--paper-lift)}
+.summit-btn{width:100%;background:var(--summit);color:#fff;border:0;padding:.7rem;font-weight:600;font-size:.9rem;margin-top:.3rem}
+.summit-note{font-family:var(--mono);font-size:.58rem;color:var(--ink-faint);text-align:center;margin-top:.9rem;line-height:1.5}
+
+.center{text-align:center}
+.big-btn{background:var(--ink);color:var(--paper);border:1px solid var(--ink);padding:.7rem 1.4rem;font-size:.9rem;font-weight:500}
+.big-btn:hover{background:var(--accent);border-color:var(--accent)}
+.ghost{background:transparent;color:var(--ink-muted);border:1px solid var(--rule);padding:.7rem 1.4rem;font-size:.9rem}
+
+/* portfolio table */
+.acct{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--ink);padding-bottom:.6rem;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
+.acct .v{font-size:1.6rem;font-weight:600;letter-spacing:-.02em}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);text-align:right;padding:.4rem .5rem;border-bottom:1px solid var(--rule)}
+th:first-child,td:first-child{text-align:left}
+td{padding:.5rem;border-bottom:1px solid var(--rule-soft);text-align:right}
+td .sym{font-weight:600}
+td .nm{font-family:var(--body);color:var(--ink-muted);font-size:.85rem}
+.up{color:var(--up)}.down{color:var(--down)}
+
+/* capture / processing checklist */
+.check{display:flex;align-items:center;gap:.7rem;padding:.6rem 0;font-size:.95rem;opacity:.3;transition:opacity .3s}
+.check.on{opacity:1}
+.check .bx{width:20px;height:20px;border:1px solid var(--accent);color:#fff;background:transparent;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.75rem;flex:0 0 auto}
+.check.on .bx{background:var(--accent)}
+
+.flow{display:flex;flex-direction:column;gap:.4rem;max-width:340px;margin:1.5rem auto}
+.flow .node{border:1px solid var(--rule);padding:.6rem .9rem;text-align:center;font-size:.85rem;background:var(--paper-lift);opacity:.35;transition:opacity .3s,border-color .3s}
+.flow .node.on{opacity:1;border-color:var(--accent)}
+.flow .arr{text-align:center;color:var(--ink-faint);font-size:.8rem}
+
+/* email */
+.mail{border:1px solid var(--rule);background:#fff;max-width:600px;margin:0 auto;box-shadow:0 1px 0 var(--rule-soft),0 8px 30px rgba(0,0,0,.05)}
+.mail-hd{border-bottom:1px solid var(--rule-soft);padding:.9rem 1.1rem}
+.mail-hd .subj{font-size:1rem;font-weight:600;margin:0 0 .3rem}
+.mail-hd .meta{font-family:var(--mono);font-size:.62rem;color:var(--ink-faint)}
+.mail-bd{padding:1.1rem}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule-soft);border:1px solid var(--rule-soft);margin-bottom:1rem}
+.kpi{background:#fff;padding:.7rem}
+.kpi .l{font-family:var(--mono);font-size:.54rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+.kpi .v{font-size:1.15rem;font-weight:600;margin-top:.2rem}
+.mail h3{font-size:.7rem;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin:1.2rem 0 .5rem;border-top:1px solid var(--rule-soft);padding-top:.8rem}
+.bars{display:flex;flex-direction:column;gap:.35rem}
+.bar-row{display:grid;grid-template-columns:52px 1fr 54px;gap:.5rem;align-items:center;font-size:.78rem}
+.bar-track{height:14px;background:var(--paper);position:relative}
+.bar-fill{position:absolute;top:0;bottom:0;left:50%}
+.alloc{display:flex;height:22px;border:1px solid var(--rule-soft)}
+.alloc span{height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:.5rem .9rem;margin-top:.5rem;font-family:var(--mono);font-size:.58rem;color:var(--ink-muted)}
+.legend i{display:inline-block;width:8px;height:8px;margin-right:.3rem;vertical-align:middle}
+.evt{font-size:.82rem;padding:.35rem 0;border-bottom:1px solid var(--rule-soft);color:var(--ink-muted)}
+
+/* premium */
+.prem-tag{display:inline-block;font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--signal);border:1px solid currentColor;padding:.1rem .4rem;margin-left:.4rem}
+.article{border:1px solid var(--rule-soft);padding:.8rem;margin-bottom:.6rem;background:var(--paper-lift)}
+.article .h{font-weight:600;font-size:.92rem}
+.article .m{font-family:var(--mono);font-size:.58rem;color:var(--ink-faint);margin:.2rem 0 .4rem}
+.article .why{font-family:var(--body);font-size:.9rem;color:var(--ink-muted);border-left:2px solid var(--signal);padding-left:.6rem}
+.mover{display:grid;grid-template-columns:18px 1fr auto;gap:.6rem;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--rule-soft);font-size:.88rem}
+.mover .rk{font-family:var(--mono);font-size:.62rem;color:var(--ink-faint)}
+.mover .sec{font-family:var(--mono);font-size:.58rem;color:var(--ink-faint)}
+
+.nav{display:flex;justify-content:space-between;margin-top:1.75rem;gap:1rem}
+.foot{border-top:1px solid var(--rule);padding:1rem 1.5rem;font-family:var(--mono);font-size:.62rem;color:var(--ink-faint);display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+@media(max-width:640px){.kpis{grid-template-columns:1fr}.stage{padding:1.25rem}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div>
+    <p class="eyebrow">Market Data Pipeline <span class="demo-flag">Interactive demo</span></p>
+    <h1>From portfolio to personalized report</h1>
+  </div>
+  <p class="eyebrow" style="text-align:right">Walk the pipeline · 6 steps</p>
+</header>
+
+<nav class="steps" id="steps" aria-label="Walkthrough steps">
+  <button class="stepbtn active" data-step="0"><span class="num">1</span>Connect</button>
+  <button class="stepbtn" data-step="1"><span class="num">2</span>Sign in</button>
+  <button class="stepbtn" data-step="2"><span class="num">3</span>Portfolio</button>
+  <button class="stepbtn" data-step="3"><span class="num">4</span>Capture</button>
+  <button class="stepbtn" data-step="4"><span class="num">5</span>Analyze</button>
+  <button class="stepbtn" data-step="5"><span class="num">6</span>Report</button>
+</nav>
+
+<div class="stage">
+  <p class="simbar">Interactive demo — uses simulated data. “Summit Financial” is a fictional institution. No real accounts, credentials, or market data are involved.</p>
+
+  <!-- STEP 1 — connect -->
+  <section class="panel active" data-panel="0">
+    <div class="summit-card">
+      <div class="summit-top">
+        <div class="summit-logo">S</div>
+        <div><b>Summit Financial</b><span>Fictional brokerage · demo only</span></div>
+      </div>
+      <div class="summit-body center">
+        <h2>Connect your portfolio</h2>
+        <p style="font-family:var(--body);color:var(--ink-muted);margin:0 0 1.2rem">The pipeline reads a read-only snapshot of your holdings to build your report. Nothing is traded or moved.</p>
+        <button class="summit-btn" id="to-login">Log in to Summit</button>
+        <p class="summit-note">Fictional interface for demonstration. Not affiliated with any real institution.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2 — login -->
+  <section class="panel" data-panel="1">
+    <div class="summit-card">
+      <div class="summit-top">
+        <div class="summit-logo">S</div>
+        <div><b>Summit Financial</b><span>Secure demo sign-in</span></div>
+      </div>
+      <div class="summit-body">
+        <h2>Sign in</h2>
+        <div class="fld"><label>Username</label><input id="u" value="demo_user" readonly></div>
+        <div class="fld"><label>Password</label><input id="p" type="password" value="demodemo" readonly></div>
+        <button class="summit-btn" id="do-login">Sign in</button>
+        <p class="summit-note">Simulated login — the fields are pre-filled with a demo account and locked. No credentials are collected, transmitted, or stored.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3 — portfolio -->
+  <section class="panel" data-panel="2">
+    <div class="acct">
+      <div><p class="eyebrow">Summit Financial · demo_user</p><div class="v" id="pv"></div></div>
+      <div style="text-align:right"><p class="eyebrow">Today</p><div id="pd" class="mono"></div></div>
+    </div>
+    <table id="holdings-tbl">
+      <thead><tr><th>Holding</th><th>Shares</th><th>Price</th><th>Day</th><th>Gain/Loss</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="nav">
+      <button class="ghost" data-back>Back</button>
+      <button class="big-btn" id="to-capture">Import to pipeline →</button>
+    </div>
+  </section>
+
+  <!-- STEP 4 — capture -->
+  <section class="panel" data-panel="3">
+    <p class="eyebrow center" style="margin-bottom:1rem">Portfolio → data extraction → structured data</p>
+    <div style="max-width:360px;margin:0 auto">
+      <div class="check" data-c="0"><span class="bx">✓</span> Account snapshot detected</div>
+      <div class="check" data-c="1"><span class="bx">✓</span> Holdings identified (6 positions)</div>
+      <div class="check" data-c="2"><span class="bx">✓</span> Values &amp; share counts extracted</div>
+      <div class="check" data-c="3"><span class="bx">✓</span> Structured portfolio created</div>
+    </div>
+    <div class="nav">
+      <button class="ghost" data-back>Back</button>
+      <button class="big-btn" id="to-analyze" disabled>Run analysis →</button>
+    </div>
+  </section>
+
+  <!-- STEP 5 — analyze -->
+  <section class="panel" data-panel="4">
+    <p class="eyebrow center">Processing pipeline</p>
+    <div class="flow" id="flow">
+      <div class="node" data-f="0">Portfolio snapshot</div><div class="arr">↓</div>
+      <div class="node" data-f="1">Normalization</div><div class="arr">↓</div>
+      <div class="node" data-f="2">Market data join</div><div class="arr">↓</div>
+      <div class="node" data-f="3">Analytics &amp; performance</div><div class="arr">↓</div>
+      <div class="node" data-f="4">Report generation</div>
+    </div>
+    <div class="nav">
+      <button class="ghost" data-back>Back</button>
+      <button class="big-btn" id="to-report" disabled>View report →</button>
+    </div>
+  </section>
+
+  <!-- STEP 6 — report -->
+  <section class="panel" data-panel="5">
+    <div class="mail">
+      <div class="mail-hd">
+        <p class="subj">Your daily portfolio report — <span id="mail-date"></span></p>
+        <p class="meta">Market Data Pipeline &lt;reports@demo.local&gt; · to demo_user</p>
+      </div>
+      <div class="mail-bd">
+        <div class="kpis">
+          <div class="kpi"><div class="l">Portfolio value</div><div class="v" id="k-val"></div></div>
+          <div class="kpi"><div class="l">Daily change</div><div class="v" id="k-day"></div></div>
+          <div class="kpi"><div class="l">Weekly change</div><div class="v" id="k-week"></div></div>
+        </div>
+
+        <h3>Individual performance (today)</h3>
+        <div class="bars" id="perf-bars"></div>
+
+        <h3>Allocation</h3>
+        <div class="alloc" id="alloc"></div>
+        <div class="legend" id="alloc-legend"></div>
+
+        <h3>Important events</h3>
+        <div class="evt">Fed minutes released 2:00pm ET — no change to rate guidance.</div>
+        <div class="evt">Semiconductor index rebalance effective at market close.</div>
+
+        <h3>Premium — AI insights <span class="prem-tag">Premium</span></h3>
+        <p class="mono" style="font-size:.6rem;color:var(--ink-faint);margin:.2rem 0 .6rem">3 articles relevant to your portfolio today · explanations are simulated</p>
+        <div id="articles"></div>
+
+        <h3>Premium — Top 5 relevant movers <span class="prem-tag">Premium</span></h3>
+        <p class="mono" style="font-size:.6rem;color:var(--ink-faint);margin:.2rem 0 .6rem">Biggest movers in sectors <em>you actually hold</em> — not the whole market</p>
+        <div id="movers"></div>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="ghost" data-back>Back</button>
+      <button class="big-btn" id="restart">Restart walkthrough</button>
+    </div>
+  </section>
+</div>
+
+<footer class="foot">
+  <span>Market Data Pipeline · interactive demo · all data simulated</span>
+  <span>Fictional institution · no real credentials or accounts</span>
+</footer>
+
+<script src="data.js"></script>
+<script>
+(function(){
+  "use strict";
+  var D=window.PIPELINE_DATA, $=function(s){return document.querySelector(s);};
+  var $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s));};
+  var SECTOR_COLORS={Semiconductors:"#1B4B8F",Aerospace:"#A9660F",Technology:"#0E6B5E",Energy:"#7A3E9D",Financials:"#2B6CB0",Cash:"#8A8F96"};
+  var money=function(n){return "$"+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var signed=function(n,pct){var s=n>=0?"+":"−";return s+"$"+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:0})+" / "+s+Math.abs(pct).toFixed(2)+"%";};
+
+  var maxStep=0;
+  function go(step){
+    step=+step;
+    if(step>maxStep) maxStep=step;
+    $$(".panel").forEach(function(p){ p.classList.toggle("active", +p.dataset.panel===step); });
+    $$(".stepbtn").forEach(function(b){
+      var s=+b.dataset.step;
+      b.classList.toggle("active", s===step);
+      b.classList.toggle("done", s<maxStep && s!==step);
+    });
+    if(step===3) runCapture();
+    if(step===4) runFlow();
+    if(step===5) renderEmail();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  $("#steps").addEventListener("click",function(e){var b=e.target.closest(".stepbtn"); if(b) go(b.dataset.step);});
+  $$("[data-back]").forEach(function(b){ b.addEventListener("click",function(){ var cur=+$(".panel.active").dataset.panel; go(Math.max(0,cur-1)); }); });
+  $("#to-login").onclick=function(){go(1);};
+  $("#do-login").onclick=function(){renderPortfolio();go(2);};
+  $("#to-capture").onclick=function(){go(3);};
+  $("#to-analyze").onclick=function(){go(4);};
+  $("#to-report").onclick=function(){go(5);};
+  $("#restart").onclick=function(){maxStep=0;go(0);};
+
+  function renderPortfolio(){
+    var p=D.portfolio;
+    $("#pv").textContent=money(p.value);
+    var pd=$("#pd"); pd.textContent=signed(p.dailyChange,p.dailyPct); pd.className="mono "+(p.dailyChange>=0?"up":"down");
+    var tb=$("#holdings-tbl tbody"); tb.innerHTML="";
+    p.holdings.forEach(function(h){
+      if(h.symbol==="CASH"){ tb.innerHTML+='<tr><td><span class="sym">Cash</span><br><span class="nm">Sweep</span></td><td>—</td><td>'+money(h.price)+'</td><td>—</td><td>—</td></tr>'; return; }
+      tb.innerHTML+='<tr><td><span class="sym">'+h.symbol+'</span><br><span class="nm">'+h.name+'</span></td>'
+        +'<td>'+h.shares+'</td><td>'+money(h.price)+'</td>'
+        +'<td class="'+(h.day>=0?'up':'down')+'">'+(h.day>=0?'+':'')+h.day.toFixed(1)+'%</td>'
+        +'<td class="'+(h.gain>=0?'up':'down')+'">'+(h.gain>=0?'+':'')+h.gain.toFixed(1)+'%</td></tr>';
+    });
+  }
+
+  function runCapture(){
+    var checks=$$(".check"); checks.forEach(function(c){c.classList.remove("on");});
+    $("#to-analyze").disabled=true;
+    checks.forEach(function(c,i){ setTimeout(function(){ c.classList.add("on"); if(i===checks.length-1) $("#to-analyze").disabled=false; }, 350*(i+1)); });
+  }
+  function runFlow(){
+    var nodes=$$("#flow .node"); nodes.forEach(function(n){n.classList.remove("on");});
+    $("#to-report").disabled=true;
+    nodes.forEach(function(n,i){ setTimeout(function(){ n.classList.add("on"); if(i===nodes.length-1) $("#to-report").disabled=false; }, 420*(i+1)); });
+  }
+
+  function renderEmail(){
+    var p=D.portfolio;
+    $("#mail-date").textContent=new Date().toLocaleDateString(undefined,{month:"short",day:"numeric"});
+    $("#k-val").textContent=money(p.value);
+    var kd=$("#k-day"); kd.textContent=signed(p.dailyChange,p.dailyPct); kd.className="v "+(p.dailyChange>=0?"up":"down");
+    var kw=$("#k-week"); kw.textContent=signed(p.weeklyChange,p.weeklyPct); kw.className="v "+(p.weeklyChange>=0?"up":"down");
+
+    // performance bars (diverging from center)
+    var equities=p.holdings.filter(function(h){return h.symbol!=="CASH";});
+    var maxAbs=Math.max.apply(null,equities.map(function(h){return Math.abs(h.day);}))||1;
+    $("#perf-bars").innerHTML=equities.map(function(h){
+      var w=(Math.abs(h.day)/maxAbs)*48, pos=h.day>=0;
+      return '<div class="bar-row"><span class="mono">'+h.symbol+'</span>'
+        +'<div class="bar-track"><div class="bar-fill" style="background:'+(pos?'var(--up)':'var(--down)')+';'
+        +(pos?'left:50%;width:'+w+'%':'width:'+w+'%;left:'+(50-w)+'%')+'"></div></div>'
+        +'<span class="'+(pos?'up':'down')+'" style="text-align:right">'+(pos?'+':'')+h.day.toFixed(1)+'%</span></div>';
+    }).join("");
+
+    // allocation
+    var total=p.holdings.reduce(function(s,h){return s+(h.symbol==="CASH"?h.price:h.shares*h.price);},0);
+    var seg=p.holdings.map(function(h){var val=h.symbol==="CASH"?h.price:h.shares*h.price;return {sector:h.sector,pct:val/total*100};});
+    $("#alloc").innerHTML=seg.map(function(s){return '<span style="width:'+s.pct+'%;background:'+(SECTOR_COLORS[s.sector]||'#ccc')+'"></span>';}).join("");
+    $("#alloc-legend").innerHTML=seg.map(function(s){return '<span><i style="background:'+(SECTOR_COLORS[s.sector]||'#ccc')+'"></i>'+s.sector+' '+s.pct.toFixed(0)+'%</span>';}).join("");
+
+    // premium articles
+    $("#articles").innerHTML=D.articles.map(function(a){
+      return '<div class="article"><div class="h">'+a.headline+'</div>'
+        +'<div class="m">'+a.source+' · '+a.time+' · '+a.tag+'</div>'
+        +'<div class="why"><b>Why this matters to you — </b>'+a.why+'</div></div>';
+    }).join("");
+
+    // premium movers (sorted by magnitude)
+    var mv=D.movers.slice().sort(function(a,b){return Math.abs(b.pct)-Math.abs(a.pct);});
+    $("#movers").innerHTML=mv.map(function(m,i){
+      return '<div class="mover"><span class="rk">'+(i+1)+'</span>'
+        +'<span>'+m.name+'<br><span class="sec">'+m.sector+'</span></span>'
+        +'<span class="'+(m.pct>=0?'up':'down')+'">'+(m.pct>=0?'+':'')+m.pct.toFixed(1)+'%</span></div>';
+    }).join("");
+  }
+})();
+</script>
+</body>
+</html>

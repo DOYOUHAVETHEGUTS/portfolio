@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ entry.title }} — {{ site.name }}{% endblock %}
+{% block description %}{{ entry.summary }}{% endblock %}
+
+{% block content %}
+<article class="case">
+  <header class="case-head">
+    <p class="eyebrow"><a href="/lab/">Lab</a> / {{ entry.date }}</p>
+    <h1>{{ entry.title }}</h1>
+    <p class="lede">{{ entry.summary }}</p>
+  </header>
+
+  <dl class="manifest">
+    {% if entry.technique %}<div><dt>ATT&amp;CK</dt><dd>{{ entry.technique }}</dd></div>{% endif %}
+    {% if entry.tactic %}<div><dt>Tactic</dt><dd>{{ entry.tactic }}</dd></div>{% endif %}
+    <div><dt>Environment</dt><dd>{{ entry.environment or 'Isolated home lab' }}</dd></div>
+    <div class="manifest-stack"><dt>Tools</dt><dd>{{ entry.stack | commas }}</dd></div>
+  </dl>
+
+  <div class="case-body">
+    <div class="prose">{{ entry.html | safe }}</div>
+    {% if entry.toc %}
+    <aside class="case-toc" aria-label="On this page">
+      <p class="eyebrow">On this page</p>
+      {{ entry.toc | safe }}
+    </aside>
+    {% endif %}
+  </div>
+
+  <p class="disclaimer">All work described here was performed against systems I
+  own, in a network-isolated lab, for defensive research.</p>
+</article>
+{% endblock %}

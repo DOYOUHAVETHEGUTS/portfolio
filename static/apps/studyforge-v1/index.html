@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StudyForge v1 — original desktop prototype (re-creation)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F1F1EE;--paper-lift:#FBFBF9;--ink:#15191D;--ink-muted:#5C6169;
+  --ink-faint:#8A8F96;--rule:#D7D6CF;--rule-soft:#E4E3DD;
+  --accent:#0E6B5E;--accent-dim:#0E6B5E1A;--signal:#A9660F;--panel:#232A31;
+  --err:#B4442E;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"Newsreader",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--display);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:clamp(1.25rem,4vw,2.5rem)}
+.eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-faint);margin:0}
+.demo-flag{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--signal);border:1px solid currentColor;padding:.2rem .45rem;margin-left:.5rem}
+h1{font-family:var(--display);font-size:clamp(1.3rem,3vw,1.7rem);font-weight:600;margin:.3rem 0 .4rem}
+.sub{color:var(--ink-muted);font-size:.92rem;margin:0 0 1.25rem;max-width:62ch}
+.rule{border:0;border-top:1.5px solid var(--accent);margin:0 0 1.25rem}
+
+/* Fake desktop window, to signal "this was a local GUI" */
+.win{border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--paper-lift);
+  box-shadow:0 1px 0 var(--rule-soft)}
+.win-bar{background:#E3E2DC;border-bottom:1px solid var(--rule);padding:.45rem .7rem;
+  display:flex;align-items:center;gap:.45rem}
+.win-bar .dot{width:10px;height:10px;border-radius:50%;background:#C9C7BF}
+.win-title{font-family:var(--mono);font-size:.7rem;color:var(--ink-muted);margin-left:.4rem}
+.win-body{padding:1.1rem}
+
+.row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.75rem}
+label{font-family:var(--mono);font-size:.7rem;color:var(--ink-muted);min-width:96px}
+select,input[type=text]{font-family:var(--mono);font-size:.78rem;padding:.4rem .6rem;
+  border:1px solid var(--rule);border-radius:5px;background:#fff;color:var(--ink);min-width:230px}
+.btn{font-family:var(--display);font-size:.84rem;padding:.5rem 1rem;border-radius:6px;
+  border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.log{background:var(--panel);color:#E9E7E0;border-radius:6px;padding:.8rem .9rem;
+  font-family:var(--mono);font-size:.74rem;line-height:1.75;min-height:190px;
+  max-height:300px;overflow:auto;white-space:pre-wrap;margin-top:.9rem}
+.log .ok{color:#7FD1B9}
+.log .warn{color:#E0A445}
+.log .err{color:#F0907E}
+.log .dim{color:#9AA2AA}
+
+.out{margin-top:1rem;border:1px solid var(--rule);border-radius:6px;background:#fff;padding:.9rem 1rem;display:none}
+.out.show{display:block}
+.out h3{font-size:.9rem;margin:0 0 .4rem}
+.out .meta{font-family:var(--mono);font-size:.66rem;color:var(--ink-faint);margin-bottom:.6rem}
+.out p{font-family:var(--body);font-size:.95rem;margin:.4rem 0}
+
+.note{font-family:var(--mono);font-size:.62rem;color:var(--ink-faint);
+  background:var(--accent-dim);padding:.6rem .75rem;border-radius:4px;margin-top:1.5rem;line-height:1.65}
+.gap{border-left:2px solid var(--signal);background:#A9660F0F;padding:.7rem .85rem;
+  margin-top:1rem;font-size:.86rem}
+.gap b{color:var(--signal)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">StudyForge v1 <span class="demo-flag">Re-creation</span></p>
+  <h1>The original desktop prototype</h1>
+  <p class="sub">Before the web app, StudyForge was a local Tkinter window that did one thing:
+  point it at a textbook, make one summarization call per chapter, and email the result.
+  This is a faithful re-creation of that flow, including the failure modes that drove the
+  rewrite — run it and watch where it breaks.</p>
+  <hr class="rule">
+
+  <div class="win">
+    <div class="win-bar">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="win-title">StudyForge.py — library.json</span>
+    </div>
+    <div class="win-body">
+      <div class="row">
+        <label for="book">Book</label>
+        <select id="book">
+          <option value="comptia">CompTIA Security+ (bookmarks: "Chapter 1"…)</option>
+          <option value="forecasting">Forecasting: Principles and Practice (bookmarks: "1 Getting started"…)</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="path">Path</label>
+        <input type="text" id="path" value="D:\notes\programming\books\sec_plus.pdf" readonly>
+      </div>
+      <div class="row">
+        <label for="delivery">Deliver via</label>
+        <select id="delivery">
+          <option value="smtp">SMTP (smtp.gmail.com:587)</option>
+        </select>
+      </div>
+      <div class="row">
+        <button class="btn" id="run">Process &amp; email next chapter</button>
+        <button class="btn ghost" id="reset">Reset</button>
+      </div>
+
+      <div class="log" id="log" role="status" aria-live="polite"><span class="dim">Ready. Chapter detection uses bookmarks titled "Chapter N".</span></div>
+
+      <div class="out" id="out">
+        <h3 id="out-title"></h3>
+        <div class="meta" id="out-meta"></div>
+        <div id="out-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gap">
+    <b>What this version got wrong.</b> Every behavior above is real: chapter detection
+    that only matched literal "Chapter N" bookmarks and silently found nothing in other
+    books; a single one-shot summarization call with no grounding check; no retries; and
+    an email path that failed on TLS certificate handling while the queue advanced anyway,
+    so a failed send looked like a completed one. Those four failures are what v2 and v3
+    were built to fix.
+  </div>
+
+  <p class="note">Re-creation of the original prototype's behavior for illustration. No model
+  is called, no file is read, and no email is sent — the log below replays what the real v1
+  did, including its failure modes.</p>
+
+</div>
+
+<script>
+(function () {
+  var logEl = document.getElementById("log");
+  var outEl = document.getElementById("out");
+  var running = false;
+
+  function line(text, cls) {
+    var span = document.createElement("span");
+    if (cls) span.className = cls;
+    span.textContent = text + "\n";
+    logEl.appendChild(span);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  function clear() { logEl.textContent = ""; outEl.classList.remove("show"); }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  var SUMMARY = {
+    title: "Chapter 1: Compare and contrast various types of security controls",
+    meta: "one summarization call · no grounding check · 1,140 words",
+    body: [
+      "Security controls are the foundation of organizational security policy and a multi-layered defense strategy. There are two ways to classify them.",
+      "Control Categories describe what the control is: technical, managerial, operational, physical. Control Types describe how the control functions: preventive, deterrent, detective, corrective, compensating, directive.",
+      "A single control can belong to one category and one type simultaneously — a firewall is a technical, preventive control."
+    ]
+  };
+
+  document.getElementById("run").addEventListener("click", async function () {
+    if (running) return;
+    running = true;
+    this.disabled = true;
+    clear();
+
+    var book = document.getElementById("book").value;
+
+    line("> load config/library.json", "dim");
+    await wait(450);
+    line("> open " + document.getElementById("path").value, "dim");
+    await wait(500);
+
+    line("> detect chapters (match: bookmark title ~ /^Chapter \\d+/)");
+    await wait(700);
+
+    if (book === "forecasting") {
+      line("  bookmarks found: 12", "dim");
+      line("  matching /^Chapter \\d+/: 0", "err");
+      line("! 0 chapters detected — nothing to process", "err");
+      await wait(500);
+      line("> run complete (0 chapters processed)", "warn");
+      line("", "dim");
+      line("# Note: the book has a full bookmark tree, but none of the titles", "dim");
+      line("# start with the literal word \"Chapter\". v1 reports success and", "dim");
+      line("# does nothing. This is the silent-failure case.", "dim");
+      running = false; this.disabled = false;
+      return;
+    }
+
+    line("  bookmarks found: 29", "dim");
+    line("  matching /^Chapter \\d+/: 29", "ok");
+    await wait(600);
+    line("> chapter 1/29 — extracting pages 70–88", "dim");
+    await wait(800);
+    line("> summarize(chapter_1)  [single call, no verification]");
+    await wait(1100);
+    line("  received 1,140 words", "ok");
+
+    outEl.classList.add("show");
+    document.getElementById("out-title").textContent = SUMMARY.title;
+    document.getElementById("out-meta").textContent = SUMMARY.meta;
+    document.getElementById("out-body").innerHTML =
+      SUMMARY.body.map(function (p) { return "<p>" + p + "</p>"; }).join("");
+
+    await wait(700);
+    line("> send email via smtp.gmail.com:587");
+    await wait(1200);
+    line("  starttls() ...", "dim");
+    await wait(900);
+    line("  SSLCertVerificationError: unable to get local issuer certificate", "err");
+    line("! send failed", "err");
+    await wait(500);
+    line("> advancing delivery queue -> next chapter = 2", "warn");
+    line("> run complete", "ok");
+    line("", "dim");
+    line("# Note: the send failed, but the queue advanced and the run", "dim");
+    line("# reported success. Chapter 1 was never delivered and will", "dim");
+    line("# never be retried. This is the bug that hid itself.", "dim");
+
+    running = false;
+    this.disabled = false;
+  });
+
+  document.getElementById("reset").addEventListener("click", function () {
+    clear();
+    line("Ready. Chapter detection uses bookmarks titled \"Chapter N\".", "dim");
+  });
+
+  document.getElementById("book").addEventListener("change", function () {
+    document.getElementById("path").value = this.value === "comptia"
+      ? "D:\\notes\\programming\\books\\sec_plus.pdf"
+      : "D:\\notes\\programming\\books\\fpp3.pdf";
+  });
+})();
+</script>
+</body>
+</html>
