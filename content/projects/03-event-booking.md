@@ -10,7 +10,7 @@ role: Designer and developer (client project)
 period: 2026
 type: Client website · Booking and contract workflow
 summary: A website for a small event-décor business that takes a client from "plan my event" to a signed agreement and a $250 deposit without a phone call. Two booking paths, a quote sized to guests and venue, a generated agreement with a tokenized signing link, and an owner view to track every booking.
-stack: [HTML, CSS, JavaScript, Netlify, custom domain, PDF generation, transactional email]
+stack: [Python, Flask, gunicorn, Render, Cloudflare, Resend (email), PDF generation, HTML/CSS/JavaScript]
 demo: /apps/event-booking/
 demo_embed: true
 demo_note: A test booking from start to signed agreement. The business name, services and prices are placeholders; nothing is sent or charged. Switch to Owner view at the end.
@@ -45,6 +45,15 @@ booking flow:
 The client gets a branded confirmation email when the request comes in, and the
 agreement email once it's finalized. The owner signs in to a separate area to manage
 bookings.
+
+## How it's built
+
+A small Flask app on Render serves the public pages and the owner portal from one
+codebase. The server keeps the booking records, builds the quotation and agreement
+PDFs, issues the signing links and sends the emails through Resend. Those jobs are
+why it runs a Python backend instead of a static page: the email key and the signed
+records have to live on a server, not in the browser. The domain sits behind
+Cloudflare.
 
 ## The decisions that mattered
 

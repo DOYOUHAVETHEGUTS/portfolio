@@ -102,6 +102,9 @@
       <p class="eyebrow" data-i18n="foot.colophon">Colophon</p>
       <p class="fine">Built with Python — Markdown case studies rendered by a
       120-line static generator. No tracking, no cookies.</p>
+      {% if theme == "retro" %}<button type="button" class="coin-slot" data-arcade-coin aria-label="Insert coin">
+        <span class="slot" aria-hidden="true"><span class="coin"></span></span><span class="coin-label">INSERT COIN</span>
+      </button>{% endif %}
       <p class="fine">{{ site.location }} · © {{ year }}</p>
       <p class="fine" style="opacity:.6">Built {{ built_at }}</p>
     </div>
@@ -109,6 +112,7 @@
 </footer>
 
 <script src="/js/site.js" defer></script>
+{% if theme == "retro" %}<script src="/js/arcade.js" defer></script>{% endif %}
 {# <script src="/js/i18n.js" defer></script> #}
 </body>
 </html>

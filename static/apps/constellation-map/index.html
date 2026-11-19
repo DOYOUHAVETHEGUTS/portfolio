@@ -361,5 +361,72 @@ button{font-family:inherit;cursor:pointer}
   if(focus && byId[focus]) setTimeout(function(){ select(focus); }, 400);
 })();
 </script>
+<script>
+/* Hidden constellation: ten faint stars in the corner form an invader. Light
+   them all (any order) to send a signal to the portfolio page around this demo,
+   which starts the hidden arcade game in the retro build. */
+(function(){
+  var svg = document.getElementById("graph"); if(!svg) return;
+  var NS = "http://www.w3.org/2000/svg";
+  var RM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var PTS = [[-1.3,-1.7],[1.3,-1.7],[-0.9,-0.4],[0.9,-0.4],[-1.7,0.9],[1.7,0.9],[-0.8,2.0],[0.8,2.0],[-0.5,0.55],[0.5,0.55]];
+  var EDGES = [[0,2],[2,3],[3,1],[2,4],[4,6],[6,7],[7,5],[5,3]];
+  var st = document.createElement("style");
+  st.textContent = "#kw-egg .s,#kw-egg line,#kw-egg text{pointer-events:none}#kw-egg .s{fill:var(--ink-faint,#7E739C);opacity:.45;transition:opacity .2s,r .2s}" +
+    "#kw-egg .h{fill:transparent;cursor:default}#kw-egg .h:hover+.s{opacity:.9}" +
+    "#kw-egg .s.on{fill:var(--accent,#46E5A0);opacity:1}#kw-egg line{stroke:var(--accent,#46E5A0);stroke-width:1;opacity:.75}" +
+    "#kw-egg.done .s.on{fill:var(--signal,#FFC24B)}#kw-egg text{font:8px/1 monospace;letter-spacing:.08em;fill:var(--signal,#FFC24B)}" +
+    (RM ? "" : "#kw-egg .tw{animation:kwtw 4s ease-in-out infinite}@keyframes kwtw{0%,100%{opacity:.25}50%{opacity:.9}}");
+  document.head.appendChild(st);
+  var g = document.createElementNS(NS, "g"); g.id = "kw-egg"; g.setAttribute("aria-hidden", "true");
+  var lines = document.createElementNS(NS, "g"); g.appendChild(lines);
+  var lit = PTS.map(function(){ return false; }), stars = [], scale = 10, ox = 0, oy = 0, fired = false;
+  var label = document.createElementNS(NS, "text"); label.setAttribute("text-anchor", "middle"); g.appendChild(label);
+  PTS.forEach(function(p, i){
+    var hit = document.createElementNS(NS, "circle"); hit.setAttribute("class", "h"); hit.setAttribute("r", 8);
+    var s = document.createElementNS(NS, "circle"); s.setAttribute("class", "s" + (i === 1 ? " tw" : "")); s.setAttribute("r", 1.4);
+    hit.addEventListener("click", function(ev){ ev.stopPropagation(); light(i); });
+    g.appendChild(hit); g.appendChild(s); stars.push([hit, s]);
+  });
+  svg.appendChild(g);
+  function layout(){
+    var r = svg.getBoundingClientRect(); ox = r.width - 48; oy = 52;
+    stars.forEach(function(pair, i){ var x = ox + PTS[i][0]*scale, y = oy + PTS[i][1]*scale;
+      pair.forEach(function(c){ c.setAttribute("cx", x); c.setAttribute("cy", y); }); });
+    label.setAttribute("x", ox); label.setAttribute("y", oy + 3.6*scale);
+    drawLines();
+  }
+  function drawLines(){
+    while(lines.firstChild) lines.removeChild(lines.firstChild);
+    EDGES.forEach(function(e){ if(!lit[e[0]] || !lit[e[1]]) return;
+      var l = document.createElementNS(NS, "line");
+      l.setAttribute("x1", ox + PTS[e[0]][0]*scale); l.setAttribute("y1", oy + PTS[e[0]][1]*scale);
+      l.setAttribute("x2", ox + PTS[e[1]][0]*scale); l.setAttribute("y2", oy + PTS[e[1]][1]*scale);
+      lines.appendChild(l); });
+  }
+  function light(i){
+    if(fired) return;
+    lit[i] = true; stars[i][1].setAttribute("class", "s on"); stars[i][1].setAttribute("r", 2.2); drawLines();
+    if(lit.every(Boolean)){ fired = true; g.setAttribute("class", "done"); label.textContent = "SIGNAL SENT"; setTimeout(launch, 900); }
+  }
+  function reset(){
+    fired = false; lit = lit.map(function(){ return false; }); g.removeAttribute("class"); label.textContent = "";
+    stars.forEach(function(p, i){ p[1].setAttribute("class", "s" + (i === 1 ? " tw" : "")); p[1].setAttribute("r", 1.4); });
+    drawLines();
+  }
+  function note(t){ label.textContent = t; setTimeout(reset, 2500); }
+  function launch(){
+    var embedded = window.parent && window.parent !== window;
+    if(embedded){
+      try { if(window.parent.KWArcade){ window.parent.postMessage({kwArcade: "start", from: "constellation"}, location.origin); setTimeout(reset, 1500); return; } } catch(e){}
+      note("SIGNAL RECEIVED"); return;
+    }
+    fetch("/", {cache: "no-store"}).then(function(r){ return r.text(); }).then(function(t){
+      if(t.indexOf("/js/arcade.js") > -1) location.href = "/?arcade=1"; else note("SIGNAL RECEIVED");
+    }).catch(function(){ note("SIGNAL RECEIVED"); });
+  }
+  layout(); addEventListener("resize", layout);
+})();
+</script>
 </body>
 </html>

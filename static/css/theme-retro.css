@@ -162,3 +162,16 @@
 @media (prefers-reduced-motion: reduce) {
   [data-variant="retro"] .hero-statement::after { animation: none; }
 }
+
+/* --- Hidden arcade: footer coin slot (see /js/arcade.js) -------------------- */
+.coin-slot{position:relative;display:inline-flex;align-items:center;gap:.6rem;margin-top:.8rem;padding:.45rem .65rem;
+  background:transparent;border:2px solid var(--rule);box-shadow:2px 2px 0 var(--rule-soft);color:var(--ink-faint);
+  font-family:var(--pixel);font-size:.5rem;letter-spacing:.1em;line-height:1;cursor:pointer}
+.coin-slot:hover,.coin-slot:focus-visible{color:var(--signal);border-color:var(--signal);outline:none}
+.coin-slot .slot{position:relative;display:block;width:16px;height:20px;background:var(--panel);border:2px solid var(--rule)}
+.coin-slot .slot::after{content:"";position:absolute;left:50%;top:3px;bottom:3px;width:2px;margin-left:-1px;background:var(--signal);opacity:.6}
+.coin-slot .coin{position:absolute;left:50%;top:-14px;width:10px;height:10px;margin-left:-5px;background:var(--signal);
+  clip-path:polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%);opacity:0;z-index:1}
+.coin-slot.dropping .coin{animation:kw-coin .5s steps(6) forwards}
+@keyframes kw-coin{0%{opacity:1;transform:translateY(-10px)}75%{opacity:1;transform:translateY(14px) scaleX(.35)}100%{opacity:0;transform:translateY(16px) scaleX(.2)}}
+@media (prefers-reduced-motion: reduce){.coin-slot.dropping .coin{animation:none}}
